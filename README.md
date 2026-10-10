@@ -55,6 +55,40 @@ You need your own ROM files. This project does not include or distribute any ROM
 
 3DS games must be **decrypted**. The randomizer reads `.3ds`/`.cci`, `.cia` and `.cxi` files. It can save the result as a `.cxi` file (very large, 1.7 to 3.5 GB) or as a LayeredFS folder, which is much smaller and also works on a 3DS with custom firmware. If you load a game update, the version of that update must match the one installed in your emulator or console. 3DS games need more memory; start with `-Xmx4096M` if you run the command line.
 
+## Building from source
+
+Most people should download a release (see above). To build it yourself:
+
+**You need** a full JDK 25 (not only a JRE: the compiler `javac` must be present) and Git. Gradle is included in the repository as `gradlew` (`gradlew.bat` on Windows), so it does not need to be installed.
+
+```bash
+git clone https://github.com/ch3ngo/pokemon-randomizer-yao.git
+cd pokemon-randomizer-yao
+./gradlew build            # compiles everything and runs the tests that do not need ROMs
+```
+
+The runnable jar ends up in `random/build/libs/UPR-FVX.jar`. Useful tasks:
+
+| Command | What it does |
+|---|---|
+| `./gradlew :random:launch` | Builds a runnable copy for your platform (with its own Java runtime) and starts the program. The first run downloads the matching runtime modules, so it needs internet. The result is in `random/build/target/<platform>/`. |
+| `./gradlew :random:assemble` | Builds only the jar, without running tests. |
+| `./gradlew :random:createReleaseZips` | Builds the release archives for Windows, Linux (x86 and ARM) and macOS (Intel and Apple Silicon). Needs internet. |
+| `./gradlew test` | Runs the tests that do not need ROM files. |
+| `./gradlew romio:testROMs random:testROMs` | Runs the tests that load real ROMs. Put your own ROMs in `roms/`, named as described in `roms/readme.txt`. That folder is ignored by Git and nothing in it is ever committed. |
+
+The command line mode is `java -jar random/build/libs/UPR-FVX.jar cli -h`. The program reads its `data/` folder (trainer names, player graphics) from the folder it is started in, which `launch` and the release archives take care of; if you run the bare jar, start it from a folder that contains a copy of `random/src/main/resources/data`. 3DS games need more memory, so add `-Xmx4096M` when running them.
+
+Project layout:
+
+```
+random/    randomizer logic, settings, command line and graphical interface
+romio/     reading and writing ROMs, one handler per generation, player graphics
+utils/     shared utilities
+docs/      documentation and wiki source
+roms/      your own ROMs for tests (ignored by Git)
+```
+
 ## Credits
 
 This project descends from a chain of forks, and all credit for the randomizer itself belongs to their authors:
