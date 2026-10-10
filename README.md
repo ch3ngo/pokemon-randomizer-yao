@@ -1,96 +1,77 @@
 # Pokemon Randomizer YAO
 
-> Yet Another One. A personal fork of Universal Pokemon Randomizer FVX, extending shop control, real shiny randomization, in-ROM egg boxes, custom sprites for Gen 4-7, a softlock validator, and packaging for Gen 1-7 (including 3DS, up to Ultra Sun/Ultra Moon).
+> Yet Another One. A Pokemon ROM randomizer for Gen 1 to Gen 7, built on top of Universal Pokemon Randomizer FVX, with extra tools for shops, shiny Pokemon, eggs, player sprites and safer randomization.
 
-**Status: idea/prototype.** Nothing listed under Roadmap below is implemented yet. This is a fork at the FVX baseline with project scaffolding (README, branch policy) added on top.
+**Status: early development.** The current version behaves like Universal Pokemon Randomizer FVX 1.6.2. The additions listed under "In development" are being built and are not part of a release yet.
 
 ---
 
-## Overview
+## What it does
 
-Universal Pokemon Randomizer FVX already covers Gen 1 to 7 randomization well, but a few things I wanted were either missing, hacky, or out of scope for a two-person open source project: permanent shop items with real price/slot control, actual shiny Pokemon (not just a palette swap or a trainer IV hack), egg boxes placed directly in the ROM without touching the save file, custom player/trainer sprites for the DS and 3DS generations, and a validator that catches known static softlocks before they happen instead of after.
+Pokemon Randomizer YAO shuffles and randomizes the data of the mainline Pokemon games: wild Pokemon, starters, trainers, static and gift encounters, in-game trades, moves, movesets, evolutions, abilities, items, shops, TMs and more. It aims to keep every randomization option of FVX and add more control on top.
 
-This fork exists to build those features for my own use, on top of FVX's codebase and conventions, without asking the upstream maintainers to take on work that is niche by their own stated standards (see `UPSTREAM_README.md`, "What is a good fit for the randomizer?"). It stays scoped to Gen 1-7 including the 3DS games (Ultra Sun/Ultra Moon is the upper bound); Switch-generation games are out of scope.
+### Supported games
 
-The repository keeps full upstream history and an `upstream` remote so changes can be rebased against FVX as it continues to develop.
+Generation 1 to Generation 7, including the 3DS games up to Ultra Sun and Ultra Moon. Switch games are not supported. It is developed and tested with English and Spanish ROMs where both exist.
 
-## Features
+### Included from FVX
 
-Nothing below is implemented. This lists what FVX already provides as a baseline, and what this fork plans to add on top, in planned order.
+- Randomization of wild Pokemon, trainers, starters, trades, static and gift encounters, moves, movesets, evolutions, abilities, base stats, types, TMs, tutors, items and shops.
+- Many gameplay improvements, such as making HMs usable by every Pokemon.
+- Custom player graphics for Gen 1 to 3.
+- A graphical interface and a command line mode.
+- Release builds that bundle their own Java runtime, so Java does not need to be installed.
 
-### Baseline (from FVX, already present)
-- Randomization of wild Pokemon, trainers, starters, trades, static/gift encounters, Pokemon palettes, items, and more, across Gen 1-7.
-- Custom Player Graphics for Gen 1-3.
-- A trainer-only shiny hack (IV bit 30) and a shiny-looking palette option, neither of which is a real shiny flag.
-- CLI and Swing GUI.
-- jlink runtime bundling for 5 platforms.
+### In development
 
-### Planned, this fork
-- Configurable permanent extra shop items (slot limits, custom prices, per-game) (planned)
-- Real shiny chance (0-100%) for wild, static, gift, trainer, and egg Pokemon, via per-generation PID/IV patches rather than palette tricks (planned)
-- In-ROM egg boxes with species filters (legendary, non-legendary, N-stage lines), no save editing (planned)
-- Custom player/trainer sprites for Gen 4-7 (NDS and 3DS) (planned)
-- A rule-based static softlock validator run at randomization time (planned)
-- CI-built native installers (msi/exe, dmg, deb/AppImage) via jpackage, and a longer-term headless-core-plus-Tauri-shell GUI (planned)
+- Extra items in the shops, with a price for each (for example Rare Candy for 1), configurable per game.
+- Real shiny Pokemon with an adjustable chance, from none to all, for wild, static, gift, trainer and egg Pokemon.
+- Boxes of eggs placed directly in the game, filtered by type of Pokemon (legendary, non-legendary, three-stage lines and more).
+- Player sprite replacement for every generation, with a library of ready-made characters.
+- Protected item lists, so random shop items never replace the ones you chose.
+- Locke and Soft-locke modes for challenge runs.
+- A check that warns about randomizations known to get a game stuck.
+- A clear warning when a ROM is not an unmodified retail dump, listing which options may be affected.
+- An optional, spoiler-safe HTML guide of what was randomized, in English and Spanish.
+- A new, more modern look and native installers for Windows, macOS and Linux.
 
-Detailed per-phase technical notes are kept on the `dev` branch.
+## Running it
 
-## Requirements
+A release archive contains its own Java runtime, so there is nothing to install first. This project has no release yet. When one is published it will be on the Releases page, with the same layout as the FVX release archives:
 
-- JDK 25 (the upstream project builds and tests against this version)
-- Gradle (wrapper included, `./gradlew`)
-- Your own legally dumped ROMs for any ROM-dependent build or test step. None are provided or distributed by this project.
+| Platform | How to start it |
+|---|---|
+| Windows | Extract the archive and run `launcher.bat` |
+| Linux (x86 and ARM) | Extract the archive, then `chmod +x launcher.sh` and run `./launcher.sh` |
+| macOS (Intel and Apple Silicon) | Extract the archive and run `launcher.command` (the first time you may need to right click it and choose Open, because the app is not notarized) |
 
-## Installation
+Then open your ROM, choose your options and save the randomized ROM. Always keep a copy of your original ROM.
 
-```bash
-git clone https://github.com/ch3ngo/pokemon-randomizer-yao.git
-cd pokemon-randomizer-yao
-git checkout dev
-./gradlew build
-```
+### Your ROMs
 
-Place your own ROM files under `roms/` for the `testROMs` Gradle task. That folder is gitignored and nothing inside it is ever committed.
+You need your own ROM files. This project does not include or distribute any ROMs, and it does not include game data. The randomizer expects an unmodified retail dump; modified ROMs, ROM hacks and bad dumps may randomize incorrectly.
 
-## Usage
+### 3DS games
 
-Until the planned features land, usage is identical to upstream FVX: run the GUI jar, or use the CLI via `CliRandomizer` (`-i` input ROM, `-o` output ROM, `-s` settings file, and related flags). See `UPSTREAM_README.md` and the FVX wiki linked there for the current feature set and CLI reference.
-
-## Project structure
-
-```
-random/      Core randomization logic: Randomizer classes per category, Settings, CLI, GUI
-romio/       ROM reading/writing: RomHandler implementations per generation, graphics packs
-utils/       Shared utility code
-devtools/    Development and maintenance tooling
-docs/        Project documentation and wiki source
-roms/        Local ROM files for testing (gitignored, user-supplied, never committed)
-```
-
-## Branching policy
-
-- `main`: only functional, verified, released versions. Nothing experimental lands here directly.
-- `dev`: integration branch. All day-to-day work happens here or on feature branches merged into it.
-- `feature/<name>`: one branch per feature, merged into `dev` when working.
-- Promotion from `dev` to `main` is done by manually copying or cherry-picking the verified files, never a plain merge, so that internal development notes never reach `main`.
+3DS games must be **decrypted**. The randomizer reads `.3ds`/`.cci`, `.cia` and `.cxi` files. It can save the result as a `.cxi` file (very large, 1.7 to 3.5 GB) or as a LayeredFS folder, which is much smaller and also works on a 3DS with custom firmware. If you load a game update, the version of that update must match the one installed in your emulator or console. 3DS games need more memory; start with `-Xmx4096M` if you run the command line.
 
 ## Credits
 
-This project descends from a chain of forks:
+This project descends from a chain of forks, and all credit for the randomizer itself belongs to their authors:
 
-- **[Dabomstew](https://github.com/Dabomstew/universal-pokemon-randomizer)**: original Universal Pokemon Randomizer.
+- **[Dabomstew](https://github.com/Dabomstew/universal-pokemon-randomizer)**: the original Universal Pokemon Randomizer.
 - **Ajarmar** and the **UPR-ZX** team: [Universal Pokemon Randomizer ZX](https://github.com/Ajarmar/universal-pokemon-randomizer-zx), built on Dabomstew's work.
 - **FVX** ([foxoftheasterisk](https://github.com/foxoftheasterisk), [voliol](https://github.com/voliol)) and the [upr-fvx](https://github.com/upr-fvx/universal-pokemon-randomizer-fvx) contributors: Universal Pokemon Randomizer FVX, built on UPR-ZX.
-- **yao** (this fork, ch3ngo): shop control, real shiny randomization, in-ROM egg boxes, Gen 4-7 custom sprites, softlock validation, and packaging work, built on FVX.
+- **yao** (ch3ngo): the additions listed above, built on FVX.
 
-Changes in this fork are modifications of FVX and are marked as such in code and commit history, starting 10/10/2026.
+Changes in this fork are modifications of FVX and are marked as such in the code and the commit history, starting 10/10/2026. The original FVX readme is kept as `UPSTREAM_README.md`.
 
-Pokemon names, sprites, and all ROM data belong to Nintendo and Game Freak. This project does not ship any ROMs or copyrighted game assets. You must supply your own legally dumped ROM files to use it.
+Pokemon and all related names, sprites and game data belong to Nintendo, Game Freak and Creatures. This project is not affiliated with or endorsed by them.
 
 ## License
 
-GPL-3.0-or-later, inherited from upstream. See `LICENSE.txt`. All original source file headers are kept intact.
+GPL-3.0-or-later, inherited from upstream. See `LICENSE.txt`. The source file headers of the original authors are kept intact.
 
-## Contributing
+## Feedback
 
-This is a personal project. Issues and pull requests are welcome, but see the branching policy above: contributions target `dev`, not `main`.
+Issues are welcome on the Issues page. This is a personal project, so replies may take a while.
