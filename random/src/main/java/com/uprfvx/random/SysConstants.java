@@ -28,8 +28,8 @@ package com.uprfvx.random;
 
 public class SysConstants {
 
-    public static final String RELEASES_URL = "https://github.com/upr-fvx/universal-pokemon-randomizer-fvx/releases";
-    public static final String RELEASES_API_URL = "https://api.github.com/repos/upr-fvx/universal-pokemon-randomizer-fvx/releases/latest";
+    public static final String RELEASES_URL = "https://github.com/ch3ngo/pokemon-randomizer-yao/releases";
+    public static final String RELEASES_API_URL = "https://api.github.com/repos/ch3ngo/pokemon-randomizer-yao/releases/latest";
     public static final String WIKI_URL = "https://upr-fvx.github.io/universal-pokemon-randomizer-fvx/wikipages";
     public static final String WIKI_HOME_URL = WIKI_URL + "/home.html";
     public static final String WIKI_IMPORTANT_INFO_URL = WIKI_URL + "/important_info.html";
