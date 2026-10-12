@@ -175,6 +175,14 @@ public abstract class Abstract3DSRomHandler extends AbstractRomHandler {
 		return baseRom.getCode();
 	}
 
+	/** Modified from FVX (10/10/2026): the size of the code segment of the executable returned by {@link #readCode}. */
+	protected int readTextSegmentSize() {
+		if (gameUpdate != null) {
+			return gameUpdate.getTextSegmentSize();
+		}
+		return baseRom.getTextSegmentSize();
+	}
+
 	protected void writeCode(byte[] data) throws IOException {
 		baseRom.writeCode(data);
 	}

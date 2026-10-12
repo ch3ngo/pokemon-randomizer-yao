@@ -37,7 +37,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Base64;
+
+import com.uprfvx.random.yao.YaoSettings;
 import java.util.List;
 import java.util.zip.CRC32;
 
@@ -387,6 +390,18 @@ public class Settings {
     private boolean pokemonPalettesFollowEvolutions;
     private boolean pokemonPalettesShinyFromNormal;
 
+    // Modified from YAO (10/10/2026): settings that only exist in this fork. They are stored outside the
+    // upstream settings layout (see YaoSettings), so upstream's fixed-length format stays untouched.
+    private YaoSettings yaoSettings = new YaoSettings();
+
+    public YaoSettings getYaoSettings() {
+        return yaoSettings;
+    }
+
+    public void setYaoSettings(YaoSettings yaoSettings) {
+        this.yaoSettings = yaoSettings;
+    }
+
     public void writeToFileFormat(FileOutputStream out) throws IOException {
         byte[] settings = toStringWithoutVersion().getBytes(StandardCharsets.UTF_8);
         ByteBuffer buf = ByteBuffer.allocate(settings.length + 8);
@@ -394,6 +409,16 @@ public class Settings {
         buf.putInt(settings.length);
         buf.put(settings);
         out.write(buf.array());
+        if (!yaoSettings.isDefault()) {
+            // Appended after the upstream data. Upstream readers stop after the declared length,
+            // so a file with this block still loads (without the YAO settings) in plain FVX.
+            byte[] yao = yaoSettings.toText().getBytes(StandardCharsets.UTF_8);
+            ByteBuffer ext = ByteBuffer.allocate(YaoSettings.FILE_MAGIC.length + 4 + yao.length);
+            ext.put(YaoSettings.FILE_MAGIC);
+            ext.putInt(yao.length);
+            ext.put(yao);
+            out.write(ext.array());
+        }
     }
 
     public static Settings readFromFileFormat(FileInputStream in) throws IOException, UnsupportedOperationException {
@@ -418,7 +443,28 @@ public class Settings {
         byte[] buffer = FileFunctions.readFullyIntoBuffer(in, length);
         String settings = new String(buffer, StandardCharsets.UTF_8);
 
-        return fromStringAndVersion(settings, version);
+        Settings result = fromStringAndVersion(settings, version);
+        result.readYaoExtension(in.readAllBytes());
+        return result;
+    }
+
+    /** Reads the optional YAO block that may follow the upstream data in a settings file. */
+    private void readYaoExtension(byte[] rest) {
+        int magicLength = YaoSettings.FILE_MAGIC.length;
+        if (rest.length < magicLength + 4
+                || !Arrays.equals(Arrays.copyOfRange(rest, 0, magicLength), YaoSettings.FILE_MAGIC)) {
+            return; // plain upstream file, nothing to read
+        }
+        int length = ByteBuffer.wrap(rest, magicLength, 4).getInt();
+        if (length < 0 || magicLength + 4 + length > rest.length) {
+            // Fall back to defaults for the YAO part instead of refusing to load the whole file.
+            this.yaoSettings = new YaoSettings();
+            this.yaoSettings.addWarning("The YAO part of the settings file is damaged and was ignored; "
+                    + "defaults are used for it.");
+            return;
+        }
+        String text = new String(rest, magicLength + 4, length, StandardCharsets.UTF_8);
+        this.yaoSettings = YaoSettings.fromText(text);
     }
 
     /**
@@ -426,9 +472,20 @@ public class Settings {
      * of the version the string was created in. Updates the Settings object if needed.
      */
     public static Settings fromString(String withVersion) {
+        // Modified from YAO (10/10/2026): an optional YAO block can follow the upstream string after a '~'.
+        String yaoBlock = null;
+        int separator = withVersion.indexOf(YaoSettings.STRING_SEPARATOR);
+        if (separator >= 0) {
+            yaoBlock = withVersion.substring(separator + 1);
+            withVersion = withVersion.substring(0, separator);
+        }
         int version = Integer.parseInt(withVersion.substring(0, 3));
         String withoutVersion = withVersion.substring(3);
-        return fromStringAndVersion(withoutVersion, version);
+        Settings settings = fromStringAndVersion(withoutVersion, version);
+        if (yaoBlock != null && !yaoBlock.isEmpty()) {
+            settings.yaoSettings = YaoSettings.fromBase64(yaoBlock);
+        }
+        return settings;
     }
 
     private static Settings fromStringAndVersion(String s, int version) {
@@ -444,7 +501,11 @@ public class Settings {
 
     @Override
     public String toString() {
-        return VERSION + toStringWithoutVersion();
+        String upstream = VERSION + toStringWithoutVersion();
+        if (yaoSettings.isDefault()) {
+            return upstream;
+        }
+        return upstream + YaoSettings.STRING_SEPARATOR + yaoSettings.toBase64();
     }
 
     private String toStringWithoutVersion() {

@@ -541,7 +541,9 @@ public class TrainerRandomizersTest extends RandomizerTest {
 
         Map<String, List<Type>> e4Types = new HashMap<>();
         for (Trainer tr : romHandler.getTrainers()) {
-            if (tr.getTag() != null && tr.getTag().contains("ELITE")) {
+            // Modified from FVX (11/10/2026): also check KAHUNA so Sun/Moon and Ultra Sun/Ultra Moon kahunas
+            // (retagged out of ELITE, see Gen7Constants) keep their type-theme coverage in this test.
+            if (tr.getTag() != null && (tr.getTag().contains("ELITE") || tr.getTag().contains("KAHUNA"))) {
                 String memberTag = tr.getTag().split("-")[0];
                 if (!e4Types.containsKey(memberTag)) {
                     e4Types.put(memberTag, new ArrayList<>());

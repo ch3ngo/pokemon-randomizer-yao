@@ -14,7 +14,8 @@ if errorlevel 1 (
     exit /b 1
 )
 
-REM Path to embedded Java
+REM Modified (packaging restructure, 11/10/2026): this launcher now lives inside app\ itself,
+REM directly alongside the jar, data\ and bundled java\, so no further cd is needed to reach them.
 set "JAVA=java\bin\java.exe"
 
 REM Detect embedded Java missing
@@ -33,7 +34,7 @@ if errorlevel 1 (
 )
 
 REM Launch FVX
-"%JAVA%" -Xmx4608M -jar UPR-FVX.jar please-use-the-launcher
+"java\bin\java.exe" -Xmx4608M -jar PokemonRandomizerYAO.jar please-use-the-launcher
 REM Honestly not sure if all bad wrong things (crashes) give an errorlevel 1
 if errorlevel 1 (
     echo Error: something went wrong with the Randomizer / Java. >> console_output.log

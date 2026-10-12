@@ -455,7 +455,10 @@ public class TrainerPokemonRandomizer extends Randomizer {
             if (group.contains("-")) {
                 group = group.substring(0, group.indexOf('-'));
             }
-            if (group.startsWith("GYM") || group.startsWith("ELITE") ||
+            // Modified from FVX (11/10/2026): added KAHUNA so the Sun/Moon and Ultra Sun/Ultra Moon kahunas
+            // (retagged out of ELITE, see Gen7Constants) are still grouped for the "keep original type
+            // themes" option, same as before the retag.
+            if (group.startsWith("GYM") || group.startsWith("ELITE") || group.startsWith("KAHUNA") ||
                     ((group.startsWith("CHAMPION") || group.startsWith("THEMED")) && !ignoreNonLeagueGroups)) {
                 // Yep this is a group
                 if (!groups.containsKey(group)) {

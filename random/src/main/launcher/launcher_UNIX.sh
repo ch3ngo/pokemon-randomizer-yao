@@ -11,6 +11,8 @@ cd "$DIR" || {
   exit 1
 }
 
+# Modified (packaging restructure, 11/10/2026): this launcher now lives inside app/ itself,
+# directly alongside the jar, data/ and bundled java/, so no further cd is needed to reach them.
 JAVA="./java/bin/java"
 
 # Detect embedded Java missing
@@ -60,4 +62,4 @@ if [ ! -x "$JAVA" ]; then
   exit 1
 fi
 
-exec "$JAVA" -Xmx4608M -jar UPR-FVX.jar please-use-the-launcher
+exec "./java/bin/java" -Xmx4608M -jar PokemonRandomizerYAO.jar please-use-the-launcher

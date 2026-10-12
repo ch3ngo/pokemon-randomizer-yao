@@ -36,6 +36,8 @@ import java.util.*;
 
 public class NDSRom {
 
+    private static final java.util.concurrent.atomic.AtomicInteger INSTANCE_COUNTER = new java.util.concurrent.atomic.AtomicInteger();
+
     private String romCode;
     private byte version;
     private String romFilename;
@@ -69,6 +71,11 @@ public class NDSRom {
         String dataFolder = "tmp_" + rawFilename.substring(0, rawFilename.lastIndexOf('.'));
         // remove nonsensical chars
         dataFolder = dataFolder.replaceAll("[^A-Za-z0-9_]+", "");
+        // Modified for YAO (12/10/2026): the folder name only depended on the file name, so two NDSRom objects on the
+        // same game (the randomized one and a freshly opened original, as the HTML guide uses) shared one folder.
+        // Whichever read a file first overwrote the other's copy with the original bytes, so the guide showed the
+        // original data (abilities, move sets...) in the "randomized" column. Every object now has its own folder.
+        dataFolder = dataFolder + "_" + Long.toString(System.nanoTime(), 36) + "_" + INSTANCE_COUNTER.incrementAndGet();
         File tmpFolder = new File(RootPath.path + dataFolder);
         tmpFolder.mkdir();
         if (tmpFolder.canWrite()) {
@@ -469,6 +476,16 @@ public class NDSRom {
         } else {
             return null;
         }
+    }
+
+    /** Modified from FVX (10/10/2026): how many ARM9 overlays the ROM has. */
+    public int getOverlayCount() {
+        return arm9overlays.length;
+    }
+
+    /** Modified from FVX (10/10/2026): the RAM address the ARM9 binary is loaded at. */
+    public int getARM9RamAddress() {
+        return arm9_ramoffset;
     }
 
     public int getOverlayAddress(int number) {

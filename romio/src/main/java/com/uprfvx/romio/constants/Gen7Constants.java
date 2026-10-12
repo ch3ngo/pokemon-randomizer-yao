@@ -1098,10 +1098,13 @@ public class Gen7Constants {
 
     public static void tagTrainersSM(List<Trainer> trs) {
 
-        tag(trs,"ELITE1", 23, 152, 349); // Hala
-        tag(trs,"ELITE2",90, 153, 351); // Olivia
-        tag(trs,"ELITE3", 154, 403); // Nanu
-        tag(trs,"ELITE4", 155, 359); // Hapu
+        // Modified from FVX (11/10/2026): the kahunas used to share the ELITE tag family with the real Elite
+        // Four (Acerola, Kahili below), with no way to tell them apart. Retagged KAHUNA so they can be, while
+        // staying boss tier (see Trainer.isBoss()) and their own type theme (see gymAndEliteThemesSM below).
+        tag(trs,"KAHUNA1", 23, 152, 349); // Hala
+        tag(trs,"KAHUNA2",90, 153, 351); // Olivia
+        tag(trs,"KAHUNA3", 154, 403); // Nanu
+        tag(trs,"KAHUNA4", 155, 359); // Hapu
         tag(trs,"ELITE5", 149, 350); // Acerola
         tag(trs,"ELITE6", 156, 352); // Kahili
 
@@ -1141,11 +1144,13 @@ public class Gen7Constants {
 
     public static void tagTrainersUSUM(List<Trainer> trs) {
 
-        tag(trs,"ELITE1", 23, 650); // Hala
-        tag(trs,"ELITE2", 90, 153, 351); // Olivia
-        tag(trs,"ELITE3", 154, 508); // Nanu
-        tag(trs,"ELITE4", 359, 497); // Hapu
-        tag(trs,"ELITE5", 489, 490); // Big Mo
+        // Modified from FVX (11/10/2026): same KAHUNA retag as tagTrainersSM, see the comment there. Big Mo
+        // stands in for Molayne at the trial site and is kahuna tier here, not real Elite Four.
+        tag(trs,"KAHUNA1", 23, 650); // Hala
+        tag(trs,"KAHUNA2", 90, 153, 351); // Olivia
+        tag(trs,"KAHUNA3", 154, 508); // Nanu
+        tag(trs,"KAHUNA4", 359, 497); // Hapu
+        tag(trs,"KAHUNA5", 489, 490); // Big Mo
         tag(trs,"ELITE6", 149, 350); // Acerola
         tag(trs,"ELITE7", 156, 352); // Kahili
 
@@ -1202,11 +1207,12 @@ public class Gen7Constants {
     public static final HashMap<String, Type> gymAndEliteThemesSM = setupGymAndEliteThemesSM();
 
     private static HashMap<String, Type> setupGymAndEliteThemesSM() {
+        // Modified from FVX (11/10/2026): keys renamed KAHUNA1-4 to match the tagTrainersSM retag.
         HashMap<String, Type> themeMap = new HashMap<>();
-        themeMap.put("ELITE1", Type.FIGHTING); //Hala
-        themeMap.put("ELITE2", Type.ROCK); //Olivia
-        themeMap.put("ELITE3", Type.DARK); //Nanu
-        themeMap.put("ELITE4", Type.GROUND); //Hapu
+        themeMap.put("KAHUNA1", Type.FIGHTING); //Hala
+        themeMap.put("KAHUNA2", Type.ROCK); //Olivia
+        themeMap.put("KAHUNA3", Type.DARK); //Nanu
+        themeMap.put("KAHUNA4", Type.GROUND); //Hapu
         themeMap.put("ELITE5", Type.GHOST); //Acerola
         themeMap.put("ELITE6", Type.FLYING); //Kahili
         return themeMap;
@@ -1215,12 +1221,16 @@ public class Gen7Constants {
     public static final HashMap<String, Type> gymAndEliteThemesUSUM = setupGymAndEliteThemesUSUM();
 
     private static HashMap<String, Type> setupGymAndEliteThemesUSUM() {
+        // Modified from FVX (11/10/2026): keys renamed KAHUNA1-5 to match the tagTrainersUSUM retag. The
+        // "Molayne" comment on the 5th entry predates this fork and does not match tagTrainersUSUM (ELITE5,
+        // now KAHUNA5, is Big Mo there); left as found, not investigated further since it is pre-existing
+        // and outside this task's scope.
         HashMap<String, Type> themeMap = new HashMap<>();
-        themeMap.put("ELITE1", Type.FIGHTING); //Hala
-        themeMap.put("ELITE2", Type.ROCK); //Olivia
-        themeMap.put("ELITE3", Type.DARK); //Nanu
-        themeMap.put("ELITE4", Type.GROUND); //Hapu
-        themeMap.put("ELITE5", Type.STEEL); //Molayne
+        themeMap.put("KAHUNA1", Type.FIGHTING); //Hala
+        themeMap.put("KAHUNA2", Type.ROCK); //Olivia
+        themeMap.put("KAHUNA3", Type.DARK); //Nanu
+        themeMap.put("KAHUNA4", Type.GROUND); //Hapu
+        themeMap.put("KAHUNA5", Type.STEEL); //Molayne
         themeMap.put("ELITE6", Type.GHOST); //Acerola
         themeMap.put("ELITE7", Type.FLYING); //Kahili
         return themeMap;

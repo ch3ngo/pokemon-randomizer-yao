@@ -256,6 +256,36 @@ public abstract class AbstractDSRomHandler extends AbstractRomHandler {
         return baseRom.getOverlayAddress(number);
     }
 
+    /** Modified from FVX (10/10/2026): see {@link DsShinyPatch}, which needs to look at every overlay. */
+    protected DsShinyPatch.Memory shinyPatchMemory() {
+        return new DsShinyPatch.Memory() {
+            @Override
+            public int arm9Base() {
+                return baseRom.getARM9RamAddress();
+            }
+
+            @Override
+            public int overlayCount() {
+                return baseRom.getOverlayCount();
+            }
+
+            @Override
+            public int overlayBase(int number) {
+                return baseRom.getOverlayAddress(number);
+            }
+
+            @Override
+            public byte[] readOverlay(int number) throws IOException {
+                return baseRom.getOverlay(number);
+            }
+
+            @Override
+            public void writeOverlay(int number, byte[] data) throws IOException {
+                baseRom.writeOverlay(number, data);
+            }
+        };
+    }
+
     protected void readByteIntoFlags(byte[] data, boolean[] flags, int offsetIntoFlags, int offsetIntoData) {
         int thisByte = data[offsetIntoData] & 0xFF;
         for (int i = 0; i < 8 && (i + offsetIntoFlags) < flags.length; i++) {

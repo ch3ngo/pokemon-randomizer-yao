@@ -475,7 +475,19 @@ public class SpeciesBaseStatRandomizer extends Randomizer {
 
     protected void copyRandomizedStatsUpEvolution(Species from, Species to) {
         BaseStats fromBS = from.getBaseStats();
-        to.getBaseStats().setStatRatios(
+        BaseStats toBS = to.getBaseStats();
+        // Modified from FVX (10/10/2026): Shedinja has a fixed HP and refuses the six value method, which made
+        // the randomization crash whenever random evolutions made something evolve into Shedinja with
+        // "stats follow evolutions" on. Every other path already special-cases it; this one did not.
+        if (toBS instanceof ShedinjaBaseStats shedinjaBS) {
+            shedinjaBS.setStatRatios(
+                    fromBS.getAttack(), fromBS.getDefense(),
+                    fromBS.getSpatk(), fromBS.getSpdef(),
+                    fromBS.getSpeed()
+            );
+            return;
+        }
+        toBS.setStatRatios(
                 fromBS.getHp(),
                 fromBS.getAttack(), fromBS.getDefense(),
                 fromBS.getSpatk(), fromBS.getSpdef(),

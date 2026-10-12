@@ -142,6 +142,88 @@ public interface RomHandler {
      */
     boolean isRomValid(PrintStream logStream);
 
+    /**
+     * Whether {@link #applyCentersSkipFainted()} can work with the loaded game. Does not change anything.
+     * Modified from FVX (10/10/2026).
+     */
+    default FeatureAvailability checkCentersSkipFainted() {
+        return FeatureAvailability.no("Pokemon Centers that do not revive fainted Pokemon are not available for this "
+                + "game yet.");
+    }
+
+    /**
+     * Makes healing the party (Pokemon Centers, whiting out) skip fainted Pokemon. Modified from FVX (10/10/2026).
+     * Never throws because of the game's data: a game that cannot take it says why and is left unchanged.
+     */
+    default PatchResult applyCentersSkipFainted() {
+        return PatchResult.notApplied("Pokemon Centers that do not revive fainted Pokemon are not available for this "
+                + "game yet.");
+    }
+
+    /**
+     * Whether {@link #applyShinyChance(double)} can work with the loaded game. Does not change anything.
+     * Modified from FVX (10/10/2026).
+     */
+    default FeatureAvailability checkShinyChance() {
+        return FeatureAvailability.no("An adjustable shiny chance is not available for this game yet.");
+    }
+
+    /**
+     * Makes the given percentage (0 to 100, decimals allowed) of all Pokemon in the game shiny. Modified from FVX
+     * (10/10/2026). The default does nothing and says so; games that support it override this. Never throws because
+     * of the game's data: if the game cannot be patched the result explains why and the ROM is left unchanged.
+     */
+    default PatchResult applyShinyChance(double percent) {
+        return PatchResult.unsupported();
+    }
+
+    /**
+     * Whether {@link #applyEggBoxes(List)} can work with the loaded game. Does not change anything.
+     * Modified from FVX (10/10/2026).
+     */
+    default FeatureAvailability checkEggBoxes() {
+        return FeatureAvailability.no("The egg box is not available for this game yet.");
+    }
+
+    /**
+     * Makes the game hand over these eggs (species of the game, in order). Modified from FVX (10/10/2026). Never throws
+     * because of the game's data: a game that cannot take it says why and is left unchanged.
+     */
+    default PatchResult applyEggBoxes(List<Species> eggs) {
+        return PatchResult.notApplied("The egg box is not available for this game yet.");
+    }
+
+    /**
+     * Whether the walking sprites of the player can be exported and replaced in the loaded game. Does not change
+     * anything. Modified from FVX (10/10/2026).
+     */
+    default FeatureAvailability checkPlayerSprites() {
+        return FeatureAvailability.no("Replacing the player's sprites is not available for this game yet.");
+    }
+
+    /** The walking sprite sheet of the player (male or female character) as an image, or null if not available. */
+    default java.awt.image.BufferedImage exportPlayerSprites(boolean female) {
+        return null;
+    }
+
+    /**
+     * Replaces the walking sprites of the player with the given sheets (a null sheet leaves that character alone).
+     * Never throws because of the images: the result says what happened.
+     */
+    default PatchResult applyPlayerSprites(java.awt.image.BufferedImage male, java.awt.image.BufferedImage female) {
+        return PatchResult.notApplied("Replacing the player's sprites is not available for this game yet.");
+    }
+
+    /**
+     * Describes how this ROM differs from a retail dump, and which options that may affect.
+     * Modified from FVX (10/10/2026). The default only knows whether the ROM is valid or not;
+     * handlers that keep per-component checksums override it with a detailed report.
+     */
+    default RomIntegrityReport getIntegrityReport() {
+        return isRomValid(null) ? RomIntegrityReport.clean(generationOfPokemon())
+                : RomIntegrityReport.wholeRom(generationOfPokemon(), -1, 0);
+    }
+
     // ======================================================
     // Methods for retrieving a list of Species objects.
     // Note that for many of these lists, index 0 is null.

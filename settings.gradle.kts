@@ -1,5 +1,5 @@
 
-rootProject.name = "universal-pokemon-randomizer-fvx"
+rootProject.name = "pokemon-randomizer-yao"
 
 include("docs")
 include("devtools")

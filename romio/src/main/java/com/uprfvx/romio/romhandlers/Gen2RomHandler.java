@@ -3397,6 +3397,17 @@ public class Gen2RomHandler extends AbstractGBCRomHandler {
         return romEntry.getIntValue("CheckValueOffset") != 0;
     }
 
+    /** Modified from FVX (10/10/2026): adjustable shiny chance, see {@link Gen2ShinyPatch}. */
+    @Override
+    public FeatureAvailability checkShinyChance() {
+        return Gen2ShinyPatch.check(rom);
+    }
+
+    @Override
+    public PatchResult applyShinyChance(double percent) {
+        return Gen2ShinyPatch.apply(rom, percent);
+    }
+
     @Override
     public void writeCheckValue(int checkValue) {
         int offset = romEntry.getIntValue("CheckValueOffset");

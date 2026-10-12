@@ -785,6 +785,14 @@ public class RandomizerGUI {
         cpgNotExistLabel.setVisible(false);
         baseTweaksPanel.add(liveTweaksPanel);
         liveTweaksPanel.setVisible(false);
+        // modified from FVX, 11/10/2026: hidden, superseded by this fork's own real shiny-chance feature
+        // (DsShinyPatch/CtrShinyPatch/Gen2ShinyPatch/Gen3ShinyPatch). Settings.shinyChance and
+        // TrainerPokemonRandomizer's IV-bit-30 hack stay in place for rebase compatibility with upstream FVX.
+        tpRandomShinyTrainerPokemonCheckBox.setVisible(false);
+        // modified from FVX, 11/10/2026: hidden, superseded by this fork's own custom shop items feature
+        // (ItemRandomizer.addCustomItemsToShops, --shop-item). Settings.addCheapRareCandiesToShops stays in place
+        // for rebase compatibility with upstream FVX.
+        shAddRareCandyCheckBox.setVisible(false);
         websiteLinkLabel.setCursor(new java.awt.Cursor(Cursor.HAND_CURSOR));
         wikiLinkLabel.setCursor(new java.awt.Cursor(Cursor.HAND_CURSOR));
 
@@ -2946,7 +2954,8 @@ public class RandomizerGUI {
             enableButtons(tpRandomizeTrainerNamesCheckBox, tpRandomizeTrainerClassNamesCheckBox);
 
             tpNoEarlyWonderGuardCheckBox.setVisible(romHandler.abilitiesPerSpecies() != 0);
-            tpRandomShinyTrainerPokemonCheckBox.setVisible(pokemonGeneration >= 7);
+            // modified from FVX, 11/10/2026: always hidden regardless of generation, see initExplicit()
+            tpRandomShinyTrainerPokemonCheckBox.setVisible(false);
 
             boolean canGiveMovesetsToBoss = romHandler.canGiveCustomMovesetsToBossTrainers();
             boolean canGiveMovesetsToImportant = romHandler.canGiveCustomMovesetsToImportantTrainers();
@@ -3055,8 +3064,9 @@ public class RandomizerGUI {
             shShuffleRadioButton.setEnabled(true);
             shRandomRadioButton.setEnabled(true);
             shBalanceShopItemPricesCheckBox.setEnabled(true);
-            shAddRareCandyCheckBox.setVisible(romHandler.canChangeShopSizes());
-            shAddRareCandyCheckBox.setEnabled(romHandler.canChangeShopSizes());
+            // modified from FVX, 11/10/2026: always hidden regardless of shop support, see initExplicit()
+            shAddRareCandyCheckBox.setVisible(false);
+            shAddRareCandyCheckBox.setEnabled(false);
 
             pickupItemsPanel.setVisible(romHandler.abilitiesPerSpecies() > 0);
             puUnchangedRadioButton.setEnabled(true);
@@ -4172,6 +4182,10 @@ public class RandomizerGUI {
             String[] commandArgs = Arrays.copyOfRange(args, 1, args.length);
             int exitCode = CliRandomizer.invoke(commandArgs);
             System.exit(exitCode);
+        } else if (firstCliArg.equals("web")) {
+            // Modified from YAO (10/10/2026): the local web interface, see com.uprfvx.random.web.
+            String[] webArgs = Arrays.copyOfRange(args, 1, args.length);
+            System.exit(com.uprfvx.random.web.WebLauncher.run(webArgs));
         } else {
             launcherInput = firstCliArg;
             if (launcherInput.equals("please-use-the-launcher")) usedLauncher = true;

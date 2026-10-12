@@ -382,4 +382,61 @@ public class RomHandlerEvolutionTest extends RomHandlerTest {
             }
         }
     }
+
+    /**
+     * Added (12/10/2026): "fully evolved by level" calls condenseLevelEvolutions on its own, without the rest of Make
+     * Evolutions Easier, so it must never change HOW anything evolves: methods stay as they are (stone, trade,
+     * friendship, party...), level-threshold evolutions only go down, and non-level evolutions only have their
+     * estimated evolution level lowered.
+     */
+    @ParameterizedTest
+    @MethodSource("getRomNames")
+    public void condenseLevelEvolutionsOnlyLowersLevelsAndEstimates(String romName) {
+        loadROM(romName);
+        int lowest = 30;
+        assumeTrue(romHandler.getHighestEvoLvl() > lowest);
+
+        Map<Species, List<int[]>> before = new LinkedHashMap<>();
+        Map<Species, List<EvolutionType>> typesBefore = new LinkedHashMap<>();
+        Map<Species, List<Species>> targetsBefore = new LinkedHashMap<>();
+        for (Species pk : romHandler.getSpeciesSetInclFormes()) {
+            List<int[]> values = new ArrayList<>();
+            List<EvolutionType> types = new ArrayList<>();
+            List<Species> targets = new ArrayList<>();
+            for (Evolution evo : pk.getEvolutionsFrom()) {
+                values.add(new int[]{evo.getExtraInfo(), evo.getEstimatedEvoLvl()});
+                types.add(evo.getType());
+                targets.add(evo.getTo());
+            }
+            before.put(pk, values);
+            typesBefore.put(pk, types);
+            targetsBefore.put(pk, targets);
+        }
+
+        romHandler.condenseLevelEvolutions(lowest);
+
+        boolean lowered = false;
+        boolean sawNonLevel = false;
+        for (Species pk : romHandler.getSpeciesSetInclFormes()) {
+            List<Evolution> after = new ArrayList<>(pk.getEvolutionsFrom());
+            assertEquals(before.get(pk).size(), after.size(), pk.getFullName());
+            for (int i = 0; i < after.size(); i++) {
+                Evolution evo = after.get(i);
+                int[] was = before.get(pk).get(i);
+                String what = pk.getFullName() + " -> " + evo.getTo().getFullName();
+                assertEquals(typesBefore.get(pk).get(i), evo.getType(), "method changed: " + what);
+                assertSame(targetsBefore.get(pk).get(i), evo.getTo(), "target changed: " + what);
+                assertTrue(evo.getEstimatedEvoLvl() <= was[1], "estimate raised: " + what);
+                if (evo.getType().usesLevelThreshold()) {
+                    assertTrue(evo.getExtraInfo() <= was[0], "level raised: " + what);
+                    lowered |= evo.getExtraInfo() < was[0];
+                } else {
+                    sawNonLevel = true;
+                    assertEquals(was[0], evo.getExtraInfo(), "non-level detail changed: " + what);
+                }
+            }
+        }
+        assertTrue(lowered, "nothing was condensed, the test proved nothing");
+        assertTrue(sawNonLevel);
+    }
 }

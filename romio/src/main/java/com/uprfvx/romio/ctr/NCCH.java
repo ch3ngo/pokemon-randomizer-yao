@@ -703,6 +703,26 @@ public class NCCH {
         }
     }
 
+    /**
+     * Modified from FVX (10/10/2026): the size in bytes of the code (text) segment as stated in the ExHeader. The
+     * game's code is at the start of {@code .code} and the segment is padded with zeros up to a 4096 byte page, which
+     * is executable memory the shiny patch uses. Returns -1 if it cannot be read.
+     */
+    public int getTextSegmentSize() {
+        try {
+            reopenROM();
+            if (ncchStartingOffset < 0) {
+                return -1;
+            }
+            baseRom.seek(ncchStartingOffset + 0x200 + 0x18);
+            byte[] raw = new byte[4];
+            baseRom.readFully(raw);
+            return (raw[0] & 0xFF) | ((raw[1] & 0xFF) << 8) | ((raw[2] & 0xFF) << 16) | ((raw[3] & 0xFF) << 24);
+        } catch (IOException e) {
+            return -1;
+        }
+    }
+
     public void writeCode(byte[] code) throws IOException {
         if (!codeOpen) {
             getCode();

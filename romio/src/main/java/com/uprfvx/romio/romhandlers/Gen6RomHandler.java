@@ -592,6 +592,17 @@ public class Gen6RomHandler extends Abstract3DSRomHandler {
         }
     }
 
+    /** Modified from FVX (10/10/2026): adjustable shiny chance, see {@link CtrShinyPatch}. */
+    @Override
+    public FeatureAvailability checkShinyChance() {
+        return CtrShinyPatch.check(code, readTextSegmentSize());
+    }
+
+    @Override
+    public PatchResult applyShinyChance(double percent) {
+        return CtrShinyPatch.apply(code, readTextSegmentSize(), percent);
+    }
+
     @Override
     protected void prepareSaveRom() {
     	super.prepareSaveRom();

@@ -817,7 +817,12 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
                 idx++;
                 if (entry.length > Gen5Constants.perSeasonEncounterDataLength && useTimeOfDay) {
                     for (int i = 0; i < 4; i++) {
+                        int before = encounterAreas.size();
                         processEncounterEntry(encounterAreas, entry, i * Gen5Constants.perSeasonEncounterDataLength, idx);
+                        // Modified for YAO (12/10/2026): remember the season, the HTML guide shows it
+                        for (int a = before; a < encounterAreas.size(); a++) {
+                            encounterAreas.get(a).setSeason(i);
+                        }
                     }
                 } else {
                     processEncounterEntry(encounterAreas, entry, 0, idx);
@@ -3895,6 +3900,44 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
         }
     }
 
+    /** Modified from FVX (10/10/2026): Pokemon Centers that skip fainted Pokemon, see {@link DsHealPartyPatch}. */
+    @Override
+    public FeatureAvailability checkCentersSkipFainted() {
+        return DsHealPartyPatch.check(arm9);
+    }
+
+    @Override
+    public PatchResult applyCentersSkipFainted() {
+        return DsHealPartyPatch.apply(arm9);
+    }
+
+    /** Modified from FVX (10/10/2026): adjustable shiny chance, see {@link DsShinyPatch}. */
+    @Override
+    public FeatureAvailability checkShinyChance() {
+        return DsShinyPatch.check(arm9);
+    }
+
+    @Override
+    public PatchResult applyShinyChance(double percent) {
+        return DsShinyPatch.apply(arm9, percent, shinyPatchMemory());
+    }
+
+    /** Modified from FVX (10/10/2026): the detail behind {@link #isRomValid}. */
+    @Override
+    public RomIntegrityReport getIntegrityReport() {
+        Map<Integer, Long> expectedOverlays = new HashMap<>();
+        for (int overlayNumber : romEntry.getOverlayExpectedCRC32Keys()) {
+            expectedOverlays.put(overlayNumber, romEntry.getOverlayExpectedCRC32(overlayNumber));
+        }
+        Map<String, Long> expectedFiles = new HashMap<>();
+        for (String fileKey : romEntry.getFileKeys()) {
+            expectedFiles.put(fileKey, romEntry.getFileExpectedCRC32(fileKey));
+        }
+        String variant = romEntry.getRomType() == Gen5Constants.Type_BW2 ? "BW2" : "BW";
+        return RomIntegrityReport.forDSGame(5, variant, romEntry.getArm9ExpectedCRC32(), actualArm9CRC32,
+                expectedOverlays, actualOverlayCRC32s, expectedFiles, actualFileCRC32s);
+    }
+
     @Override
     public boolean isRomValid(PrintStream logStream) {
         // identical to Gen 4 implementation, could be moved up to AbstractDSRomHandler
@@ -4205,5 +4248,65 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
     public boolean isEnglish() {
         String romCode = getRomEntry().getRomCode();
         return romCode.length() >= 4 && romCode.charAt(3) == 'O';
+    }
+
+    /** Modified from FVX (10/10/2026): the player's walking sprites, see {@link com.uprfvx.romio.graphics.ds.DsPlayerSprites}. */
+    @Override
+    public FeatureAvailability checkPlayerSprites() {
+        if (!(romEntry.getRomType() == Gen5Constants.Type_BW2)) {
+            return FeatureAvailability.no("Replacing the player's sprites is only available for HeartGold, SoulSilver and Black 2 so far.");
+        }
+        try {
+            return com.uprfvx.romio.graphics.ds.DsPlayerSprites.looksRight(readNARC(com.uprfvx.romio.graphics.ds.DsPlayerSprites.BLACK2.narcPath()),
+                    com.uprfvx.romio.graphics.ds.DsPlayerSprites.BLACK2)
+                    ? FeatureAvailability.yes()
+                    : FeatureAvailability.no("The player's sprites were not found where expected in this game (a modified ROM?).");
+        } catch (java.io.IOException | RuntimeException e) {
+            return FeatureAvailability.no("The player's sprites could not be read: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public java.awt.image.BufferedImage exportPlayerSprites(boolean female) {
+        if (!checkPlayerSprites().available()) {
+            return null;
+        }
+        try {
+            com.uprfvx.romio.graphics.ds.DsPlayerSprites.Location where = com.uprfvx.romio.graphics.ds.DsPlayerSprites.BLACK2;
+            return com.uprfvx.romio.graphics.ds.DsPlayerSprites.export(readNARC(where.narcPath()),
+                    female ? where.femaleMember() : where.maleMember());
+        } catch (java.io.IOException | RuntimeException e) {
+            return null;
+        }
+    }
+
+    @Override
+    public PatchResult applyPlayerSprites(java.awt.image.BufferedImage male, java.awt.image.BufferedImage female) {
+        FeatureAvailability available = checkPlayerSprites();
+        if (!available.available()) {
+            return PatchResult.notApplied(available.reason());
+        }
+        try {
+            com.uprfvx.romio.graphics.ds.DsPlayerSprites.Location where = com.uprfvx.romio.graphics.ds.DsPlayerSprites.BLACK2;
+            com.uprfvx.romio.newnds.NARCArchive narc = readNARC(where.narcPath());
+            StringBuilder message = new StringBuilder();
+            boolean any = false;
+            if (male != null) {
+                PatchResult r = com.uprfvx.romio.graphics.ds.DsPlayerSprites.apply(narc, where.maleMember(), male, "boy");
+                any |= r.applied();
+                message.append(r.message()).append(' ');
+            }
+            if (female != null) {
+                PatchResult r = com.uprfvx.romio.graphics.ds.DsPlayerSprites.apply(narc, where.femaleMember(), female, "girl");
+                any |= r.applied();
+                message.append(r.message()).append(' ');
+            }
+            if (any) {
+                writeNARC(where.narcPath(), narc);
+            }
+            return any ? PatchResult.applied(message.toString().strip()) : PatchResult.notApplied(message.toString().strip());
+        } catch (java.io.IOException | RuntimeException e) {
+            return PatchResult.notApplied("The player's sprites could not be replaced: " + e.getMessage());
+        }
     }
 }

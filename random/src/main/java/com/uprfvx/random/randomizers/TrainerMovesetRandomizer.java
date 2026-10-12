@@ -591,7 +591,10 @@ public class TrainerMovesetRandomizer extends Randomizer {
         }
 
         if (allTMMoves == null) {
-            allTMMoves = romHandler.getTMMoves();
+            // Modified from FVX 11/10/2026: getTMMoves() can return null for a ROM whose TM data
+            // could not be located; treat that as no TM moves instead of crashing.
+            List<Integer> tmMoves = romHandler.getTMMoves();
+            allTMMoves = tmMoves != null ? tmMoves : List.of();
         }
 
         if (allTutorCompat == null && romHandler.hasMoveTutors()) {

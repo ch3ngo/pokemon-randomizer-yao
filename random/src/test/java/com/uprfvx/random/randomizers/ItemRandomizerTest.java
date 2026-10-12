@@ -290,6 +290,61 @@ public class ItemRandomizerTest extends RandomizerTest{
         assertEquals(xItems.size(), placedXCount);
     }
 
+    // Added (modified from FVX, 11/10/2026, web UI feedback item 15): confirms the two properties the
+    // user asked to be verified: a special shop's items never change when the regular shop pool is
+    // randomized, and a TM slot in a randomizable shop is replaced by another TM, never a regular item.
+    @ParameterizedTest
+    @MethodSource("getRomNames")
+    public void randomizeShopItemsNeverChangesNonSpecialShops(String romName) {
+        activateRomHandler(romName);
+        assumeTrue(romHandler.hasShopSupport());
+
+        List<Shop> before = romHandler.getShops().stream()
+                .filter(shop -> !shop.isSpecialShop())
+                .map(shop -> new Shop(shop))
+                .collect(Collectors.toList());
+        assumeTrue(!before.isEmpty());
+
+        new ItemRandomizer(romHandler, new Settings(), RND).randomizeShopItems();
+
+        List<Shop> after = romHandler.getShops().stream()
+                .filter(shop -> !shop.isSpecialShop())
+                .collect(Collectors.toList());
+        assertEquals(before.size(), after.size());
+        for (int i = 0; i < before.size(); i++) {
+            assertEquals(before.get(i).getItems(), after.get(i).getItems(),
+                    "Shop \"" + before.get(i).getName() + "\" is not a special shop and should never change.");
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("getRomNames")
+    public void randomizeShopItemsReplacesTMSlotsWithTMs(String romName) {
+        activateRomHandler(romName);
+        assumeTrue(romHandler.hasShopSupport());
+
+        List<Shop> specialShopsBefore = romHandler.getShops().stream()
+                .filter(Shop::isSpecialShop).map(shop -> new Shop(shop)).collect(Collectors.toList());
+        List<Boolean> wasTMSlot = new ArrayList<>();
+        for (Shop shop : specialShopsBefore) {
+            for (Item item : shop.getItems()) {
+                wasTMSlot.add(item != null && item.isTM());
+            }
+        }
+
+        new ItemRandomizer(romHandler, new Settings(), RND).randomizeShopItems();
+
+        List<Item> afterItems = new ArrayList<>();
+        romHandler.getShops().stream().filter(Shop::isSpecialShop).forEach(shop -> afterItems.addAll(shop.getItems()));
+        assertEquals(wasTMSlot.size(), afterItems.size());
+        for (int i = 0; i < wasTMSlot.size(); i++) {
+            if (wasTMSlot.get(i)) {
+                assertTrue(afterItems.get(i).isTM(),
+                        "Slot " + i + " held a TM before randomizing and should still hold a TM.");
+            }
+        }
+    }
+
     @ParameterizedTest
     @MethodSource("getRomNames")
     public void randomizePickupItemsCanBanBadItems(String romName) {

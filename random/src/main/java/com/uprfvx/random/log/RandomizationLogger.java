@@ -136,10 +136,19 @@ public class RandomizationLogger {
 
         logHead();
         logTableOfContents();
+        logSettingsSummary();
+        logWarningsAndNotes();
         logOverview();
         logOptionalSections();
+        logYaoNotes();
         logStatistics(startTime);
         logDiagnostics();
+    }
+
+    /** Modified for YAO (12/10/2026): a section banner whose title is not in the resource bundle. */
+    private void printPlainSectionTitle(String title, String shortcut) {
+        log.println("( " + title + " {" + shortcut + "} )");
+        log.println();
     }
 
     private void printSectionTitle(String bundleSectionID) {
@@ -159,15 +168,73 @@ public class RandomizationLogger {
         if (romHandler.hasGameUpdateLoaded()) {
             gameName = gameName + " (" + romHandler.getGameUpdateVersion() + ")";
         }
-        log.printf(getBS("Log.baseGame"), gameName);
-        log.printf(getBS("Log.version"), Version.LATEST.branchName, Version.LATEST.name);
-        log.printf(getBS("Log.seed"), randomSource.getSeed());
-        log.printf(getBS("Log.settings"), settings.toString());
+        // Modified for YAO (12/10/2026): a labelled header block (program, game, language, seed, date, settings),
+        // dates always DD/MM/YYYY, and help links that point to this fork instead of upstream.
+        log.println(headerRow("Program", "Pokemon Randomizer YAO " + Version.LATEST.name
+                + " (" + Version.LATEST.branchName + ")"));
+        log.println(headerRow("Game", gameName));
+        log.println(headerRow("Game language", romHandler.isEnglish() ? "English" : "Spanish (or another non-English game)"));
+        log.println(headerRow("Random seed", String.valueOf(randomSource.getSeed())));
+        log.println(headerRow("Date", java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))));
+        log.println(headerRow("Settings string", settings.toString()));
         log.println();
-        log.printf(getBS("Log.problems"));
+        log.println(" Reproduce this exact game: same game file, same settings string and same seed.");
+        log.println(" Problems? " + YAO_ISSUES_URL);
+        log.println(" Based on the Universal Pokemon Randomizer FVX: " + SysConstants.WIKI_URL);
+        printSectionSeparator();
+    }
+
+    private static final String YAO_ISSUES_URL = "https://github.com/ch3ngo/pokemon-randomizer-yao/issues";
+
+    private static String headerRow(String label, String value) {
+        return String.format(" %-16s: %s", label, value);
+    }
+
+    /** Modified for YAO (12/10/2026): only the options that differ from the defaults, in plain words. */
+    private void logSettingsSummary() {
+        printPlainSectionTitle("Settings Summary", "SETT");
+        List<String> changed = com.uprfvx.random.web.SettingsSummary.nativeChanges(settings, romHandler);
+        List<String> extras = com.uprfvx.random.web.SettingsSummary.extras(settings.getYaoSettings(), romHandler);
+        if (changed.isEmpty() && extras.isEmpty()) {
+            log.println(" Every option is at its default.");
+        }
+        if (!changed.isEmpty()) {
+            log.println(" Options that differ from the defaults (" + changed.size() + "):");
+            for (String line : changed) {
+                log.println("   - " + line);
+            }
+            log.println();
+        }
+        if (!extras.isEmpty()) {
+            log.println(" Extras of Pokemon Randomizer YAO in use (" + extras.size() + "):");
+            for (String line : extras) {
+                log.println("   - " + line);
+            }
+            log.println();
+        }
+        printSectionSeparator();
+    }
+
+    /** Modified for YAO (12/10/2026): every warning and skipped item in one place near the top. */
+    private void logWarningsAndNotes() {
+        printPlainSectionTitle("Warnings and Notes", "WARN");
+        List<String> items = new ArrayList<>(settings.getYaoSettings().getWarnings());
+        items.addAll(settings.getYaoSettings().getRunNotes());
+        if (!romHandler.isRomValid(null)) {
+            items.add("The game file is not a clean, official dump. Randomizing ROM hacks or bad dumps is not supported "
+                    + "and may cause issues (see the diagnostics section at the end).");
+        }
+        if (settings.isUpdatedFromOldVersion()) {
+            items.add("The settings were saved by an older version of the program and were converted.");
+        }
+        if (items.isEmpty()) {
+            log.println(" No warnings. Nothing was skipped.");
+        } else {
+            for (String item : items) {
+                log.println("   - " + item);
+            }
+        }
         log.println();
-        log.printf(getBS("Log.wikiLink"), SysConstants.WIKI_URL);
-        log.printf(getBS("Log.githubIssuesLink"), SysConstants.ISSUES_URL);
         printSectionSeparator();
     }
 
@@ -175,8 +242,14 @@ public class RandomizationLogger {
         printSectionTitle("toc");
         log.printf(getBS("Log.toc.instruction"));
         printContentsRow("toc");
+        printContentsRow("Settings Summary", "SETT");
+        printContentsRow("Warnings and Notes", "WARN");
         printContentsRow("overview");
         printOptionalContentsRows();
+        if (!settings.getYaoSettings().getRunNotes().isEmpty()) {
+            printContentsRow("Pokemon Randomizer YAO Additions", "YAOX");
+            log.println();
+        }
         printContentsRow("stat");
         printContentsRow("dg");
         printSectionSeparator();
@@ -339,10 +412,30 @@ public class RandomizationLogger {
         printSectionSeparator();
     }
 
+    /** Modified from YAO (10/10/2026): what the YAO additions did, if anything. */
+    private void logYaoNotes() {
+        List<String> notes = settings.getYaoSettings().getRunNotes();
+        if (notes.isEmpty()) {
+            return;
+        }
+        printPlainSectionTitle("Pokemon Randomizer YAO Additions", "YAOX");
+        for (String note : notes) {
+            log.println(" - " + note);
+        }
+        log.println();
+        printSectionSeparator();
+    }
+
     private void logDiagnostics() {
         printSectionTitle("dg");
         if (!romHandler.isRomValid(null)) {
             log.printf(getBS("Log.dg.invalidRomLoaded"));
+            // Modified from YAO (10/10/2026): which parts differ and which options they may affect
+            String detail = romHandler.getIntegrityReport().describe();
+            if (!detail.isEmpty()) {
+                log.println(detail);
+                log.println();
+            }
         }
         romHandler.printRomDiagnostics(log);
     }
@@ -531,6 +624,11 @@ public class RandomizationLogger {
     }
 
     private String evolutionMethodToString(Evolution evo) {
+        // Modified (12/10/2026): a dummy NONE evolution (read from Sun, among others) has no text in the bundle and
+        // used to abort the whole log.
+        if (evo.getType() == EvolutionType.NONE) {
+            return "-";
+        }
         StringBuilder sb = new StringBuilder();
 
         String evoTypeStr = getBS("Log.pe." + evo.getType());
@@ -865,9 +963,15 @@ public class RandomizationLogger {
             log.printf(getBS("Log.tm.metronomeMode"));
         } else {
             List<Integer> tmMoves = romHandler.getTMMoves();
-            List<Move> moves = romHandler.getMoves();
-            for (int i = 0; i < tmMoves.size(); i++) {
-                log.printf("TM%02d %s%n", i + 1, moves.get(tmMoves.get(i)).name);
+            // Modified from FVX 11/10/2026: getTMMoves() can return null for a ROM whose TM data
+            // could not be located; log a note instead of crashing.
+            if (tmMoves == null) {
+                log.println("(TM move data could not be read for this ROM, section skipped)");
+            } else {
+                List<Move> moves = romHandler.getMoves();
+                for (int i = 0; i < tmMoves.size(); i++) {
+                    log.printf("TM%02d %s%n", i + 1, moves.get(tmMoves.get(i)).name);
+                }
             }
         }
         printSectionSeparator();
@@ -896,13 +1000,20 @@ public class RandomizationLogger {
 
     private List<Move> getTMHMs() {
         List<Move> moveData = romHandler.getMoves();
-        List<Move> tmHMs = romHandler.getTMMoves()
-                .stream().map(moveData::get)
+        List<Integer> tmMoves = romHandler.getTMMoves();
+        // Modified from FVX 11/10/2026: getTMMoves() can return null for a ROM whose TM data
+        // could not be located; treat it as "nothing to log" instead of crashing.
+        if (tmMoves == null) {
+            return new ArrayList<>();
+        }
+        List<Move> tmHMs = tmMoves.stream().map(moveData::get)
                 .collect(Collectors.toList());
         if (!settings.isFullHMCompat()) {
-            romHandler.getHMMoves()
-                    .stream().map(moveData::get)
-                    .forEach(tmHMs::add);
+            List<Integer> hmMoves = romHandler.getHMMoves();
+            if (hmMoves != null) {
+                hmMoves.stream().map(moveData::get)
+                        .forEach(tmHMs::add);
+            }
         }
         return tmHMs;
     }
@@ -1134,6 +1245,9 @@ public class RandomizationLogger {
 
     private void logStaticPokemon(List<StaticEncounter> oldStatics) {
         printSectionTitle("stp");
+        // Added for YAO (12/10/2026): no game handler exposes where these events happen
+        log.println("Where each of these Pokemon is given or met is not stored in the game data, so no location is listed.");
+        log.println();
 
         List<StaticEncounter> newStatics = romHandler.getStaticPokemon();
         Map<String, Integer> seenPokemon = new TreeMap<>();
@@ -1182,32 +1296,23 @@ public class RandomizationLogger {
                 (!settings.isRandomizeWildPokemon() && settings.isWildLevelsModified());
         List<EncounterArea> encounterAreas = romHandler.getSortedEncounters(useTimeBasedEncounters);
 
-        int i = 0;
+        // Modified for YAO (12/10/2026): the same grouping and order as the HTML guide (one block per place in the
+        // game's story order, one line per Pokemon per method, combined level range and chance), instead of one block
+        // per encounter table that repeated a Pokemon once per slot.
+        List<EncounterArea> usable = new ArrayList<>();
         for (EncounterArea area : encounterAreas) {
-            if (area.getEncounterType() == EncounterType.UNUSED) {
-                continue;
+            if (area.getEncounterType() != EncounterType.UNUSED) {
+                usable.add(area);
             }
-
-            i++;
-
-            if (area.getDisplayName() == null) {
-                log.printf(getBS("Log.wp.areaNoDisplayName"), i, area.getRate());
-            } else {
-                log.printf(getBS("Log.wp.areaWithDisplayName"), i, area.getDisplayName(), area.getRate());
-            }
-            for (Encounter e : area) {
-                if (e.isSOS()) {
-                    log.printf(getBS("Log.wp.sos"), getSOSString(e));
-                }
-                if (e.getMaxLevel() > 0 && e.getMaxLevel() != e.getLevel()) {
-                    log.printf(getBS("Log.wp.encMultiLevel"), e.getSpecies().getFullName(),
-                            e.getLevel(), e.getMaxLevel());
-                } else {
-                    log.printf(getBS("Log.wp.encSingleLevel"), e.getSpecies().getFullName(), e.getLevel());
-                }
-            }
-            log.println();
         }
+        java.util.Map<Integer, String> speciesNames = new java.util.HashMap<>();
+        for (Species sp : romHandler.getSpeciesInclFormes()) {
+            if (sp != null) {
+                speciesNames.put(sp.getNumber(), sp.getFullName());
+            }
+        }
+        log.print(com.uprfvx.random.yao.guide.GuideWild.logText(romHandler, usable,
+                id -> speciesNames.getOrDefault(id, "#" + id)));
         printSectionSeparator();
     }
 
@@ -1227,6 +1332,9 @@ public class RandomizationLogger {
 
     private void logInGameTrades(List<InGameTrade> oldTrades) {
         printSectionTitle("igt");
+        // Added for YAO (12/10/2026): no game handler exposes where each trade happens
+        log.println("Where each trade happens is not stored in the game data, so no location is listed.");
+        log.println();
         List<InGameTrade> newTrades = romHandler.getInGameTrades();
 
         TextTable table = new TextTable(6);
@@ -1257,6 +1365,14 @@ public class RandomizationLogger {
         printSectionTitle("sh");
         if (settings.isAddCheapRareCandiesToShops()) {
             log.printf(getBS("Log.sh.addedRareCandies"));
+        }
+        // Modified from FVX (10/10/2026)
+        if (!itemRandomizer.getCustomShopNotes().isEmpty()) {
+            log.println("Custom shop items:");
+            for (String note : itemRandomizer.getCustomShopNotes()) {
+                log.println("- " + note);
+            }
+            log.println();
         }
         if (settings.getShopItemsMod() != Settings.ShopItemsMod.UNCHANGED) {
             log.printf(getBS("Log.sh.specialShops"));
@@ -1429,9 +1545,14 @@ public class RandomizationLogger {
             String tag = trainer.getTag();
             String name = trainer.getFullDisplayName();
 
+            // Modified from FVX (11/10/2026): added the KAHUNA prefix. Sun/Moon and Ultra Sun/Ultra Moon
+            // kahunas used to share the ELITE tag with the real Elite Four and matched here; they were
+            // retagged KAHUNA (see Gen7Constants) and need to be listed here too so this log keeps including
+            // them, same as before the retag.
             boolean isDefaultLeader = tag != null && (
                     (tag.startsWith("GYM") && tag.endsWith("-LEADER")) ||
                             tag.startsWith("ELITE") ||
+                            tag.startsWith("KAHUNA") ||
                             tag.startsWith("CHAMPION")
             );
 

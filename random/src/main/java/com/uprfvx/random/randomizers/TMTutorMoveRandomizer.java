@@ -42,8 +42,19 @@ public class TMTutorMoveRandomizer extends Randomizer {
         // Pick some random TM moves.
         int tmCount = romHandler.getTMCount();
         List<Move> allMoves = romHandler.getMoves();
+        // Modified from FVX 11/10/2026: getTMMoves()/getHMMoves() can return null for a ROM whose
+        // TM/HM data could not be located; skip TM move randomization instead of crashing, and
+        // treat a null HM list as "no HMs to avoid" rather than failing outright.
         List<Integer> hms = romHandler.getHMMoves();
+        if (hms == null) {
+            hms = List.of();
+        }
         List<Integer> oldTMs = romHandler.getTMMoves();
+        if (oldTMs == null) {
+            System.err.println("WARNING: TM move data could not be read for this ROM, "
+                    + "TM move randomization was skipped.");
+            return;
+        }
         @SuppressWarnings("unchecked")
         List<Integer> banned = new ArrayList<Integer>(noBroken ? romHandler.getGameBreakingMoves() : Collections.EMPTY_LIST);
         banned.addAll(romHandler.getMovesBannedFromLevelup());
@@ -129,10 +140,18 @@ public class TMTutorMoveRandomizer extends Randomizer {
 
         // Pick some random Move Tutor moves, excluding TMs.
         List<Move> allMoves = romHandler.getMoves();
+        // Modified from FVX 11/10/2026: getTMMoves()/getHMMoves() can return null for a ROM whose
+        // TM/HM data could not be located; treat that as "nothing to exclude" instead of crashing.
         List<Integer> tms = romHandler.getTMMoves();
+        if (tms == null) {
+            tms = List.of();
+        }
         List<Integer> oldMTs = romHandler.getMoveTutorMoves();
         int mtCount = oldMTs.size();
         List<Integer> hms = romHandler.getHMMoves();
+        if (hms == null) {
+            hms = List.of();
+        }
         @SuppressWarnings("unchecked")
         List<Integer> banned = new ArrayList<Integer>(noBroken ? romHandler.getGameBreakingMoves() : Collections.EMPTY_LIST);
         banned.addAll(romHandler.getMovesBannedFromLevelup());

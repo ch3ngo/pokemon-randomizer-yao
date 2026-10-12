@@ -65,8 +65,16 @@ public class CheckValueCalculator {
 
     }
 
+    // Modified from FVX 11/10/2026: getTMMoves() can legitimately return null when a ROM's TM data
+    // cannot be located (its search anchor is not found at all, as opposed to found and later
+    // mutated, which Gen4RomHandler.resolveTmHmDataOffset() now protects against). Guard against it
+    // here too, so a ROM type without working TM move access cannot crash check value calculation.
     private void addTMMoveInfo() {
-        for (int tmMove : romHandler.getTMMoves()) {
+        var tmMoves = romHandler.getTMMoves();
+        if (tmMoves == null) {
+            return;
+        }
+        for (int tmMove : tmMoves) {
             addToCV(tmMove);
         }
 

@@ -4662,6 +4662,33 @@ public class Gen3RomHandler extends AbstractGBRomHandler {
         return 12;
     }
 
+    /** Modified from FVX (10/10/2026): adjustable shiny chance, see {@link Gen3ShinyPatch} (English Emerald). */
+    @Override
+    public FeatureAvailability checkShinyChance() {
+        return Gen3ShinyPatch.check(rom);
+    }
+
+    @Override
+    public PatchResult applyShinyChance(double percent) {
+        return Gen3ShinyPatch.apply(rom, percent);
+    }
+
+    /** Modified from FVX (10/10/2026): the egg box, see {@link Gen3EggBoxPatch} (English Emerald). */
+    @Override
+    public FeatureAvailability checkEggBoxes() {
+        return Gen3EggBoxPatch.check(rom);
+    }
+
+    @Override
+    public PatchResult applyEggBoxes(List<Species> eggs) {
+        int[] internal = new int[eggs.size()];
+        for (int i = 0; i < internal.length; i++) {
+            int number = eggs.get(i).getNumber();
+            internal[i] = number >= 0 && number < pokedexToInternal.length ? pokedexToInternal[number] : 0;
+        }
+        return Gen3EggBoxPatch.apply(rom, internal, this::findAndUnfreeSpace);
+    }
+
     @Override
     public boolean isEnglish() {
         String romCode = getRomEntry().getRomCode();

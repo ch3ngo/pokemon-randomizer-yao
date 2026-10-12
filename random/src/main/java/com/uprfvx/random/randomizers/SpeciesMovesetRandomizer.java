@@ -503,11 +503,13 @@ public class SpeciesMovesetRandomizer extends Randomizer {
         }
 
         // tms
+        // Modified from FVX 11/10/2026: getTMMoves() can return null for a ROM whose TM data
+        // could not be located; skip the TM metronome pass instead of crashing.
         List<Integer> tmMoves = romHandler.getTMMoves();
-
-        Collections.fill(tmMoves, MoveIDs.metronome);
-
-        romHandler.setTMMoves(tmMoves);
+        if (tmMoves != null) {
+            Collections.fill(tmMoves, MoveIDs.metronome);
+            romHandler.setTMMoves(tmMoves);
+        }
 
         // movetutors
         if (romHandler.hasMoveTutors()) {

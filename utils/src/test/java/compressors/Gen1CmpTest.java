@@ -24,8 +24,8 @@ public class Gen1CmpTest {
 
     @Test
     public void dummyTest() {
-        System.out.println("foobar");
-        assertTrue("foobar".equals("foobaz"));
+        // Modified from FVX (12/10/2026): the upstream assertion compared "foobar" with "foobaz" and always failed.
+        assertTrue("foobar".equals("foobar"));
         // Does nothing, is just here so gradle doesn't complain about these text files being "empty"
     }
 

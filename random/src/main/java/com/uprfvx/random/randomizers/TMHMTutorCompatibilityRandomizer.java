@@ -46,8 +46,14 @@ public class TMHMTutorCompatibilityRandomizer extends Randomizer {
         // increase HM chances if required early on
         List<Integer> requiredEarlyOn = romHandler.getEarlyRequiredHMMoves();
         Map<Species, boolean[]> compat = romHandler.getTMHMCompatibility();
-        List<Integer> tmHMs = new ArrayList<>(romHandler.getTMMoves());
-        tmHMs.addAll(romHandler.getHMMoves());
+        // Modified from FVX 11/10/2026: getTMMoves()/getHMMoves() can return null for a ROM whose
+        // TM/HM data could not be located; treat that as no TM/HM moves instead of crashing.
+        List<Integer> tmMoves = romHandler.getTMMoves();
+        List<Integer> hmMoves = romHandler.getHMMoves();
+        List<Integer> tmHMs = new ArrayList<>(tmMoves != null ? tmMoves : List.of());
+        if (hmMoves != null) {
+            tmHMs.addAll(hmMoves);
+        }
 
         if (followEvolutions) {
             BasicSpeciesAction basicAction = pk ->
@@ -155,7 +161,12 @@ public class TMHMTutorCompatibilityRandomizer extends Randomizer {
         //
         Map<Species, boolean[]> compat = romHandler.getTMHMCompatibility();
         Map<Integer, List<MoveLearnt>> movesets = romHandler.getMovesLearnt();
+        // Modified from FVX 11/10/2026: getTMMoves() can return null for a ROM whose TM data
+        // could not be located; treat that as no TMs instead of crashing.
         List<Integer> tmMoves = romHandler.getTMMoves();
+        if (tmMoves == null) {
+            tmMoves = List.of();
+        }
         for (Species pkmn : compat.keySet()) {
             List<MoveLearnt> moveset = movesets.get(pkmn.getNumber());
             boolean[] pkmnCompat = compat.get(pkmn);

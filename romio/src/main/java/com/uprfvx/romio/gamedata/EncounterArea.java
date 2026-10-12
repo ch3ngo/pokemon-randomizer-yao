@@ -42,6 +42,10 @@ public class EncounterArea extends ArrayList<Encounter> {
 
     private String locationTag;
 
+    // Added for YAO (12/10/2026): for Gen 5 areas read with time based encounters, which season the area is for
+    // (0 spring, 1 summer, 2 autumn, 3 winter). -1 when the area does not depend on the season.
+    private int season = -1;
+
     //The type of encounter this area is, as determined by the RomHandler.
     private EncounterType encounterType;
 
@@ -107,6 +111,14 @@ public class EncounterArea extends ArrayList<Encounter> {
 
     public void setLocationTag(String locationTag) {
         this.locationTag = locationTag;
+    }
+
+    public int getSeason() {
+        return season;
+    }
+
+    public void setSeason(int season) {
+        this.season = season;
     }
 
     public EncounterType getEncounterType() {

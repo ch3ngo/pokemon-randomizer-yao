@@ -1,0 +1,413 @@
+/* Pokemon Randomizer YAO, local web interface. Part of a fork of UPR-FVX (GPL-3.0-or-later). */
+:root {
+  --bg: #06070d;
+  --bg2: #0b0d18;
+  --panel: rgba(15, 18, 34, 0.72);
+  --panel-solid: #10132200;
+  --panel-hi: rgba(26, 31, 58, 0.78);
+  --line: rgba(124, 146, 255, 0.16);
+  --line-hi: rgba(124, 146, 255, 0.38);
+  --text: #e9edff;
+  --muted: #8f98c2;
+  --faint: #5d6590;
+  --cyan: #26e6ff;
+  --pink: #ff3fa8;
+  --lime: #b8ff3d;
+  --amber: #ffc94a;
+  --red: #ff5470;
+  --violet: #8b6bff;
+  /* Theme pass (11/10/2026, web UI feedback item 3): Pokedex-red primary accent, replacing cyan's role
+     as the primary action/focus/CTA color. --cyan stays defined and keeps its secondary/link uses. */
+  --accent: #ff4a3d;
+  --accent-dim: rgba(255, 74, 61, 0.14);
+  /* "On"/active/success state color (toggles in the on position, availability tags, success toasts). */
+  --led: #35e38a;
+  --led-dim: rgba(53, 227, 138, 0.16);
+  --radius: 16px;
+  --glow: 0 0 22px rgba(255, 74, 61, 0.35);
+  --font: "Inter", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+  --display: "Chakra Petch", "Inter", "Segoe UI", sans-serif;
+  color-scheme: dark;
+}
+:root[data-theme="light"] {
+  --bg: #eef1fb;
+  --bg2: #e4e9f8;
+  --panel: rgba(255, 255, 255, 0.78);
+  --panel-hi: rgba(255, 255, 255, 0.95);
+  --line: rgba(80, 96, 190, 0.2);
+  --line-hi: rgba(80, 96, 190, 0.45);
+  --text: #141833;
+  --muted: #55608f;
+  --faint: #8890b8;
+  --cyan: #0a8fb5;
+  --pink: #d1237f;
+  --lime: #4d8f00;
+  --amber: #a56a00;
+  --red: #c4243f;
+  --violet: #5a3fe0;
+  /* Darkened the same way the other accents are darkened for light mode (same hue, lower L/S than dark). */
+  --accent: #b72b22;
+  --accent-dim: rgba(183, 43, 34, 0.1);
+  --led: #0d713e;
+  --led-dim: rgba(13, 113, 62, 0.14);
+  --glow: 0 0 18px rgba(183, 43, 34, 0.25);
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  font-family: var(--font);
+  background: radial-gradient(1200px 700px at 78% -10%, rgba(139, 107, 255, 0.16), transparent 60%),
+              radial-gradient(900px 600px at -10% 20%, rgba(38, 230, 255, 0.10), transparent 60%), var(--bg);
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.5;
+  overflow-x: hidden;
+  cursor: none;
+}
+body.no-cursor-fx { cursor: auto; }
+a { color: var(--cyan); }
+button, input, select, textarea { font: inherit; color: inherit; cursor: none; }
+body.no-cursor-fx button, body.no-cursor-fx input, body.no-cursor-fx select { cursor: auto; }
+::selection { background: rgba(38, 230, 255, 0.3); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 8px; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: rgba(124, 146, 255, 0.28); border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(124, 146, 255, 0.5); }
+
+#bg { position: fixed; inset: 0; z-index: 0; width: 100%; height: 100%; pointer-events: none; }
+.cursor-dot, .cursor-ring {
+  position: fixed; left: 0; top: 0; z-index: 9999; pointer-events: none; border-radius: 50%;
+  transform: translate3d(-100px, -100px, 0);
+}
+/* Redesigned as a small Poke Ball (11/10/2026, style polish item 1): same trailing dot that tracks the raw
+   mouse position 1:1 (see FX.mx/FX.my in app.js), only the shape changed, from a plain glowing circle to a
+   top-red/bottom-white ball with a center band and button, kept small enough (16px) to still read as a cursor
+   and not a cluttered icon. The cursor-ring trailing effect, hover/click state changes and the reduced-motion
+   and effects-off behavior below are all untouched. */
+/* Fixed (11/10/2026, web UI feedback item 26): both this element and its ::after button used the classic
+   top:50%/left:50%/negative-margin centering trick with the default content-box sizing, so each one's 1.5px
+   border was added OUTSIDE the box the margin was computed from. That silently shifted the whole ball (and the
+   button inside it) down and right by exactly the border width, breaking the red/white split and making the
+   button sit off-center instead of exactly on the middle line. box-sizing: border-box makes the declared
+   width/height include the border, so the existing margin math (half of width/height) centers exactly. */
+.cursor-dot {
+  box-sizing: border-box;
+  width: 16px; height: 16px; margin: -8px 0 0 -8px;
+  background: linear-gradient(to bottom, var(--accent) 0 46%, #15182b 46% 54%, #f3f5ff 54% 100%);
+  border: 1.5px solid #15182b; box-shadow: 0 0 10px var(--accent);
+}
+.cursor-dot::after {
+  box-sizing: border-box;
+  content: ""; position: absolute; left: 50%; top: 50%; width: 5px; height: 5px; margin: -2.5px 0 0 -2.5px;
+  border-radius: 50%; background: #f3f5ff; border: 1.5px solid #15182b;
+}
+.cursor-ring {
+  width: 38px; height: 38px; margin: -19px 0 0 -19px; border: 1.5px solid rgba(38, 230, 255, 0.55);
+  transition: width .18s, height .18s, margin .18s, border-color .18s, background .18s;
+}
+.cursor-ring.hot { width: 58px; height: 58px; margin: -29px 0 0 -29px; border-color: var(--pink); background: rgba(255, 63, 168, 0.08); }
+.cursor-ring.down { width: 26px; height: 26px; margin: -13px 0 0 -13px; }
+body.no-cursor-fx .cursor-dot, body.no-cursor-fx .cursor-ring { display: none; }
+
+.app { position: relative; z-index: 1; min-height: 100%; display: flex; flex-direction: column; }
+header.top {
+  position: sticky; top: 0; z-index: 50; display: flex; align-items: center; gap: 22px; flex-wrap: wrap;
+  padding: 14px 28px; background: linear-gradient(to bottom, rgba(6, 7, 13, 0.92), rgba(6, 7, 13, 0.55));
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-bottom: 1px solid var(--line);
+}
+:root[data-theme="light"] header.top { background: linear-gradient(to bottom, rgba(238, 241, 251, 0.94), rgba(238, 241, 251, 0.6)); }
+.brand { display: flex; align-items: center; gap: 12px; font-weight: 800; letter-spacing: .14em; font-size: 13px; text-transform: uppercase; }
+.brand .logo { width: 34px; height: 34px; filter: drop-shadow(0 0 10px rgba(255, 74, 61, 0.6)); }
+.brand b { background: linear-gradient(90deg, var(--cyan), var(--violet), var(--pink)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.brand small { display: block; color: var(--muted); font-weight: 500; letter-spacing: .08em; font-size: 10.5px; text-transform: none; }
+nav.steps { display: flex; gap: 6px; margin-left: auto; flex-wrap: wrap; }
+nav.steps button {
+  position: relative; background: transparent; border: 1px solid transparent; border-radius: 999px; padding: 8px 18px;
+  color: var(--muted); font-weight: 600; letter-spacing: .02em; transition: color .2s, background .2s, border-color .2s;
+}
+nav.steps button .n { display: inline-grid; place-items: center; width: 20px; height: 20px; margin-right: 8px; border-radius: 50%; font-size: 11px; border: 1px solid var(--line-hi); }
+nav.steps button:hover { color: var(--text); background: rgba(124, 146, 255, 0.08); }
+nav.steps button.active { color: var(--text); border-color: var(--line-hi); background: linear-gradient(120deg, rgba(255, 74, 61, 0.14), rgba(139, 107, 255, 0.14)); box-shadow: var(--glow); }
+nav.steps button.active .n { background: var(--accent); color: #1a0603; border-color: var(--accent); }
+nav.steps button:disabled { opacity: .4; }
+.top-tools { display: flex; align-items: center; gap: 8px; }
+.icon-btn { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 10px; border: 1px solid var(--line); background: var(--panel); color: var(--muted); }
+.icon-btn:hover { color: var(--text); border-color: var(--line-hi); }
+
+main { flex: 1; width: 100%; max-width: 1240px; margin: 0 auto; padding: 30px 28px 80px; }
+.view { display: none; animation: rise .45s cubic-bezier(.2, .8, .2, 1) both; }
+.view.active { display: block; }
+@keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+h1.hero { font-size: clamp(30px, 4.6vw, 52px); line-height: 1.05; margin: 8px 0 10px; font-weight: 800; letter-spacing: -.02em; }
+h1.hero em { font-style: normal; background: linear-gradient(90deg, var(--cyan), var(--violet) 55%, var(--pink)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.lead { color: var(--muted); max-width: 68ch; font-size: 16.5px; }
+h2 { font-size: 22px; margin: 0 0 4px; letter-spacing: -.01em; }
+h3 { font-size: 15px; margin: 0; letter-spacing: .01em; }
+.muted { color: var(--muted); }
+.faint { color: var(--faint); }
+.mono { font-family: var(--mono); }
+
+.card {
+  --mx: 50%; --my: 50%;
+  position: relative; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 20px 22px; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  transition: border-color .25s, transform .25s, box-shadow .25s; overflow: hidden;
+}
+.card::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity .3s;
+  background: radial-gradient(380px circle at var(--mx) var(--my), rgba(38, 230, 255, 0.13), transparent 60%);
+}
+.card:hover { border-color: var(--line-hi); }
+.card:hover::before { opacity: 1; }
+.card.tilt { transform-style: preserve-3d; will-change: transform; }
+.grid { display: grid; gap: 16px; }
+.grid.two { grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); }
+.grid.three { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+.row { display: flex; align-items: center; gap: 12px; }
+.row.wrap { flex-wrap: wrap; }
+.spread { justify-content: space-between; }
+.stack { display: flex; flex-direction: column; gap: 14px; }
+
+.btn {
+  position: relative; display: inline-flex; align-items: center; gap: 9px; justify-content: center; padding: 10px 18px;
+  border-radius: 12px; border: 1px solid var(--line-hi); background: rgba(124, 146, 255, 0.08); color: var(--text); font-weight: 650;
+  transition: transform .15s, background .2s, border-color .2s, box-shadow .2s; overflow: hidden; white-space: nowrap;
+}
+.btn:hover { background: rgba(124, 146, 255, 0.18); transform: translateY(-1px); }
+.btn:active { transform: translateY(0) scale(.98); }
+.btn.primary { border-color: transparent; color: #1a0603; background: linear-gradient(120deg, var(--accent), #ff8a66 55%, var(--violet)); box-shadow: var(--glow); }
+.btn.primary:hover { filter: brightness(1.1); box-shadow: 0 0 30px rgba(255, 74, 61, 0.55); }
+.btn.danger { border-color: rgba(255, 84, 112, 0.5); color: #ffd0d8; background: rgba(255, 84, 112, 0.1); }
+.btn.big { padding: 15px 34px; font-size: 17px; border-radius: 14px; letter-spacing: .02em; }
+.btn.ghost { background: transparent; }
+.btn.small { padding: 6px 12px; font-size: 13px; border-radius: 9px; }
+.btn:disabled { opacity: .45; pointer-events: none; }
+/* Added 11/10/2026 (web UI feedback item 8, unavailable options must be greyed out AND non-interactive):
+   a generic disabled look for every native control type, so a field hidden behind game applicability
+   reads the same everywhere (slider, number field, dropdown, toggle, item-picker button). */
+input:disabled, select:disabled, textarea:disabled, button:disabled { opacity: .5; pointer-events: none; cursor: not-allowed; }
+.switch input:disabled ~ .track, .switch input:disabled ~ .thumb { opacity: .5; }
+/* Whole-card variant for an extras card that a loaded game cannot use at all. */
+.card-disabled { opacity: .62; pointer-events: none; }
+.btn .ripple { position: absolute; border-radius: 50%; background: rgba(255, 255, 255, 0.35); transform: scale(0); animation: ripple .6s ease-out; pointer-events: none; }
+@keyframes ripple { to { transform: scale(4); opacity: 0; } }
+
+input[type=text], input[type=number], input[type=search], select, textarea {
+  width: 100%; background: rgba(5, 7, 16, 0.6); border: 1px solid var(--line-hi); border-radius: 10px; padding: 9px 12px; outline: none;
+  transition: border-color .2s, box-shadow .2s;
+}
+:root[data-theme="light"] input[type=text], :root[data-theme="light"] input[type=number], :root[data-theme="light"] input[type=search], :root[data-theme="light"] select, :root[data-theme="light"] textarea { background: rgba(255, 255, 255, 0.9); }
+input:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(255, 74, 61, 0.18); }
+select option { background: #11142a; color: var(--text); }
+:root[data-theme="light"] select option { background: #fff; }
+label.field { display: block; font-size: 12.5px; color: var(--muted); margin-bottom: 6px; font-weight: 600; letter-spacing: .03em; }
+
+/* pills and chips */
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 650; border: 1px solid var(--line-hi); color: var(--muted); }
+.pill.ok { color: var(--led); border-color: rgba(53, 227, 138, 0.45); background: var(--led-dim); }
+.pill.warn { color: var(--amber); border-color: rgba(255, 201, 74, 0.45); background: rgba(255, 201, 74, 0.08); }
+.pill.bad { color: var(--red); border-color: rgba(255, 84, 112, 0.45); background: rgba(255, 84, 112, 0.08); }
+.pill.cyan { color: var(--cyan); border-color: rgba(38, 230, 255, 0.45); background: rgba(38, 230, 255, 0.08); }
+.chip { display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line-hi); background: transparent; color: var(--muted); font-weight: 600; font-size: 13px; transition: all .18s; }
+.chip:hover { color: var(--text); border-color: var(--accent); }
+.chip.on { color: #1a0603; background: var(--accent); border-color: var(--accent); box-shadow: var(--glow); }
+
+/* switches, segmented controls, sliders */
+.switch { position: relative; width: 44px; height: 24px; flex: none; }
+.switch input { position: absolute; inset: 0; opacity: 0; margin: 0; width: 100%; height: 100%; z-index: 2; }
+.switch .track { position: absolute; inset: 0; border-radius: 999px; background: rgba(124, 146, 255, 0.16); border: 1px solid var(--line-hi); transition: all .22s; }
+.switch .thumb { position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--muted); transition: all .25s cubic-bezier(.3, 1.6, .5, 1); }
+/* "On" toggles now glow LED green (11/10/2026 theme pass) rather than the old cyan/violet blend, so an
+   active switch reads as a genuine on-state indicator, distinct from the red primary-action accent. */
+.switch input:checked ~ .track { background: linear-gradient(120deg, rgba(53, 227, 138, 0.5), rgba(53, 227, 138, 0.22)); border-color: var(--led); box-shadow: 0 0 14px var(--led-dim); }
+.switch input:checked ~ .thumb { left: 24px; background: #fff; box-shadow: 0 0 6px var(--led); }
+.switch input:focus-visible ~ .track { outline: 2px solid var(--accent); outline-offset: 2px; }
+.seg { display: inline-flex; flex-wrap: wrap; gap: 4px; padding: 4px; border-radius: 12px; border: 1px solid var(--line); background: rgba(5, 7, 16, 0.45); }
+:root[data-theme="light"] .seg { background: rgba(255, 255, 255, 0.6); }
+.seg button { border: none; background: transparent; padding: 7px 14px; border-radius: 9px; color: var(--muted); font-weight: 600; font-size: 13.5px; transition: all .18s; }
+.seg button:hover { color: var(--text); background: rgba(124, 146, 255, 0.1); }
+.seg button.on { color: #1a0603; background: linear-gradient(120deg, var(--accent), #ff8a66); box-shadow: var(--glow); }
+.range { display: flex; align-items: center; gap: 12px; width: 100%; }
+.range output { min-width: 56px; text-align: right; font-family: var(--mono); color: var(--accent); font-size: 13.5px; }
+/* Added 11/10/2026 (web UI feedback item 7): the optional exact-value number field next to a slider. */
+.range input[type=number] { width: 76px; flex: none; text-align: right; font-family: var(--mono); padding: 7px 10px; }
+/* Fixed (12/10/2026, web UI feedback round 3): the slider's own box used to be only 6px tall with an 18px thumb
+   hanging out of it, so a click on the thumb mostly landed outside the element and never grabbed it. The input
+   is now a 26px tall hit area with a transparent background; the visible 6px track is drawn by the track
+   pseudo-element (WebKit) or the track and progress pseudo-elements (Firefox), and the thumb sits centred
+   inside the tall box. touch-action keeps a finger drag from scrolling the page instead of moving the slider. */
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 26px; margin: 0; background: transparent; outline: none; border: none; padding: 0; box-shadow: none; touch-action: pan-y; }
+body.no-cursor-fx input[type=range] { cursor: pointer; }
+input[type=range]::-webkit-slider-runnable-track { height: 6px; border-radius: 999px; background: linear-gradient(90deg, var(--accent) var(--fill, 0%), rgba(124, 146, 255, 0.18) var(--fill, 0%)); }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; margin-top: -6px; border-radius: 50%; background: #fff; border: 3px solid var(--accent); box-shadow: var(--glow); transition: transform .15s; }
+input[type=range]:active::-webkit-slider-thumb { transform: scale(1.25); }
+input[type=range]:hover::-webkit-slider-thumb { transform: scale(1.15); }
+input[type=range]::-moz-range-track { height: 6px; border-radius: 999px; background: rgba(124, 146, 255, 0.18); }
+input[type=range]::-moz-range-progress { height: 6px; border-radius: 999px; background: var(--accent); }
+input[type=range]::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: #fff; border: 3px solid var(--accent); box-shadow: var(--glow); }
+input[type=range]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 8px; }
+
+/* randomizer layout */
+.rand-layout { display: grid; grid-template-columns: 230px 1fr; gap: 22px; align-items: start; }
+@media (max-width: 900px) { .rand-layout { grid-template-columns: 1fr; } }
+.side { position: sticky; top: 86px; display: flex; flex-direction: column; gap: 6px; }
+/* Section labels (Pokemon, Trainers, Items & Shops, ...) get the technical display face (11/10/2026 theme
+   pass), a sparse accent kept off body text and control labels, plus a small accent dot per the mockup's
+   "eyebrow" treatment. */
+/* Fixed (11/10/2026, style polish item 3): justify-content:space-between distributed its flex items (the
+   ::before dot, the label text, and the count badge) differently depending on whether the badge happened to
+   be present, so a sidebar item's label drifted left or right (and only looked "centered" because of that
+   drift) depending on whether it currently had a changed-settings count. The label now gets its own flex:1
+   span so it always starts right after the dot, and the badge is a fixed-width slot that is always in the
+   layout (see .side .count below), just visually hidden when empty, instead of being added/removed from the
+   flex row. */
+.side button { text-align: left; background: transparent; border: 1px solid transparent; border-radius: 12px; padding: 10px 14px; color: var(--muted); font-family: var(--display); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; font-size: 13px; transition: all .18s; display: flex; justify-content: flex-start; align-items: center; }
+.side button::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); margin-right: 9px; opacity: .5; flex: none; }
+.side button.active::before { opacity: 1; box-shadow: 0 0 6px var(--accent); }
+.side button:hover { background: rgba(124, 146, 255, 0.08); color: var(--text); }
+.side button.active { color: var(--text); background: linear-gradient(120deg, rgba(255, 74, 61, 0.12), rgba(139, 107, 255, 0.12)); border-color: var(--line-hi); }
+.side button .t { flex: 1; text-align: left; }
+.side .count { flex: none; min-width: 20px; text-align: center; font-size: 11.5px; padding: 1px 8px; border-radius: 999px; background: rgba(255, 74, 61, 0.15); color: var(--accent); font-family: var(--mono); font-weight: 700; margin-left: 10px; visibility: hidden; }
+.side .count.show { visibility: visible; }
+.search { position: relative; }
+.search input { padding-left: 38px; }
+.search svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--faint); }
+/* The flattened section label shown above search results (same "section" meaning as the .side buttons). */
+#rand-content > h3.faint { font-family: var(--display); color: var(--accent); }
+.group { margin-bottom: 14px; }
+/* Added 11/10/2026 (settings grouping pass): a shared visual container for native and YAO controls that
+   change the same kind of thing (so far only the Pokemon panel's base stats family), so they no longer read
+   as unrelated just because one is a native upstream group and the other is this program's own card. */
+.family { display: flex; flex-direction: column; gap: 14px; margin-bottom: 14px; padding: 16px; border: 1px dashed var(--line-hi); border-radius: calc(var(--radius) + 6px); background: rgba(124, 146, 255, 0.035); }
+.family .group, .family .card { margin-bottom: 0; }
+.family-title { font-family: var(--display); color: var(--accent); text-transform: uppercase; letter-spacing: .08em; font-size: 12.5px; margin: 0 4px; }
+.group-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+.group-body { margin-top: 14px; display: grid; gap: 4px; }
+.group-body.collapsed { display: none; }
+.opt { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 9px 12px; border-radius: 10px; transition: background .15s; }
+.opt:hover { background: rgba(124, 146, 255, 0.07); }
+.opt.stacked { flex-direction: column; align-items: stretch; gap: 8px; }
+/* Added (11/10/2026, web UI feedback item 27): a field whose dependsOn parent toggle is off, e.g. a slider
+   that only does anything once its own checkbox is checked. Same dimming as .card-disabled above, but scoped
+   to one row (or, for a YAO card's own checkbox-plus-sliders block, one stack) instead of a whole card, since
+   the parent toggle itself stays interactive. */
+.opt.dep-off, .dep-off { opacity: .5; pointer-events: none; }
+.opt .name { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.opt .name span.t { overflow-wrap: anywhere; }
+mark { background: rgba(255, 201, 74, 0.35); color: inherit; border-radius: 3px; padding: 0 1px; }
+/* Renamed from the generic ".info" (bug fix, 11/10/2026): it collided with toast(message, 'info'),
+   whose toast div also carries a bare "info" class for its neutral/default kind, which made the
+   bottom-right toast notification render as this tiny round button instead of a normal toast box. */
+.infobtn { width: 18px; height: 18px; flex: none; display: inline-grid; place-items: center; border-radius: 50%; font-size: 11px; font-weight: 800; border: 1px solid var(--line-hi); color: var(--faint); background: transparent; padding: 0; }
+.infobtn:hover, .infobtn:focus-visible { color: var(--cyan); border-color: var(--cyan); }
+/* a wiki-linked info button (12/10/2026): clicking opens the wiki page, so it reads as a link */
+.infobtn.wiki { color: var(--cyan); border-color: var(--cyan); }
+.infobtn.wiki:hover, .infobtn.wiki:focus-visible { background: rgba(38, 230, 255, 0.16); }
+#tip { position: fixed; z-index: 9000; max-width: 380px; padding: 12px 14px; border-radius: 12px; background: #0e1226f2; border: 1px solid var(--line-hi); color: var(--text); font-size: 13px; line-height: 1.45; white-space: pre-wrap; pointer-events: none; opacity: 0; transform: translateY(4px); transition: opacity .15s, transform .15s; box-shadow: 0 14px 40px rgba(0, 0, 0, 0.5); }
+:root[data-theme="light"] #tip { background: #ffffffee; }
+#tip.show { opacity: 1; transform: none; }
+
+/* game view */
+.drop {
+  position: relative; display: grid; place-items: center; text-align: center; padding: 46px 20px; border-radius: 20px; border: 1.5px dashed var(--line-hi);
+  background: radial-gradient(500px circle at var(--mx, 50%) var(--my, 50%), rgba(38, 230, 255, 0.1), transparent 60%), var(--panel); transition: border-color .25s;
+}
+.drop:hover { border-color: var(--cyan); }
+/* Added (11/10/2026): drag-and-drop replaces the old broken custom file browser for choosing a game. */
+.drop.dragging { border-color: var(--cyan); border-style: solid; box-shadow: 0 0 0 3px rgba(38, 230, 255, 0.18); }
+.game-name { font-size: 28px; font-weight: 800; letter-spacing: -.01em; }
+.feature { display: flex; gap: 14px; align-items: flex-start; }
+.feature .dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 7px; flex: none; }
+.feature .dot.on { background: var(--led); box-shadow: 0 0 12px var(--led); }
+.feature .dot.off { background: var(--faint); }
+.notice { border-left: 3px solid var(--amber); padding: 10px 14px; background: rgba(255, 201, 74, 0.07); border-radius: 0 10px 10px 0; color: #ffe2a0; font-size: 14px; }
+:root[data-theme="light"] .notice { color: #6d4800; }
+.notice.bad { border-color: var(--red); background: rgba(255, 84, 112, 0.08); color: #ffc3cc; }
+:root[data-theme="light"] .notice.bad { color: #7c1226; }
+.notice.note { border-color: var(--cyan); background: rgba(38, 230, 255, 0.07); color: #bff6ff; }
+:root[data-theme="light"] .notice.note { color: #07566d; }
+
+/* tables (shop items, evolutions) */
+.table { width: 100%; border-collapse: collapse; }
+.table th { text-align: left; font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); padding: 6px 8px; font-weight: 700; }
+.table td { padding: 5px 6px; vertical-align: middle; }
+.table tr + tr td { border-top: 1px solid var(--line); }
+/* Price fields (custom shop items) are a numeric data readout, same treatment as slider readouts below. */
+.table td input[type=number] { font-family: var(--mono); color: var(--accent); }
+.pickbtn { width: 100%; text-align: left; padding: 9px 12px; border-radius: 10px; border: 1px solid var(--line-hi); background: rgba(5, 7, 16, 0.6); display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+:root[data-theme="light"] .pickbtn { background: rgba(255, 255, 255, 0.9); }
+.pickbtn:hover { border-color: var(--cyan); }
+.pickbtn .ph { color: var(--faint); }
+
+/* shiny sparkle */
+.shiny-demo { position: relative; height: 70px; display: grid; place-items: center; }
+.spark { position: absolute; width: 6px; height: 6px; border-radius: 50%; background: #fff; box-shadow: 0 0 10px 3px rgba(255, 255, 255, 0.8), 0 0 22px 6px rgba(38, 230, 255, 0.6); animation: twinkle 2.2s ease-in-out infinite; }
+@keyframes twinkle { 0%, 100% { transform: scale(0); opacity: 0; } 50% { transform: scale(1); opacity: 1; } }
+.big-number { font-size: 46px; font-weight: 800; font-family: var(--mono); background: linear-gradient(90deg, var(--cyan), var(--pink)); -webkit-background-clip: text; background-clip: text; color: transparent; letter-spacing: -.04em; }
+
+/* modal */
+.modal-back { position: fixed; inset: 0; z-index: 800; background: rgba(3, 4, 10, 0.7); backdrop-filter: blur(6px); display: grid; place-items: center; padding: 20px; animation: fade .2s both; }
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+.modal { width: min(780px, 100%); max-height: 86vh; display: flex; flex-direction: column; background: #0c0f20; border: 1px solid var(--line-hi); border-radius: 18px; box-shadow: 0 30px 90px rgba(0, 0, 0, 0.6), var(--glow); animation: pop .28s cubic-bezier(.2, 1.2, .4, 1) both; overflow: hidden; }
+:root[data-theme="light"] .modal { background: #f7f9ff; }
+@keyframes pop { from { transform: scale(.94) translateY(10px); opacity: 0; } to { transform: none; opacity: 1; } }
+.modal header { padding: 16px 20px; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.modal .body { padding: 14px 20px; overflow: auto; flex: 1; }
+.modal footer { padding: 14px 20px; border-top: 1px solid var(--line); display: flex; justify-content: flex-end; gap: 10px; }
+.listrow { display: flex; align-items: center; gap: 12px; padding: 9px 12px; border-radius: 10px; width: 100%; text-align: left; background: transparent; border: none; color: var(--text); }
+.listrow:hover { background: rgba(38, 230, 255, 0.1); }
+.listrow .sub { margin-left: auto; color: var(--faint); font-size: 12.5px; font-family: var(--mono); }
+.crumbs { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; font-family: var(--mono); font-size: 13px; color: var(--muted); }
+.crumbs button { background: transparent; border: none; color: var(--cyan); padding: 2px 4px; border-radius: 6px; }
+.crumbs button:hover { background: rgba(38, 230, 255, 0.12); }
+
+/* run view */
+.terminal { background: #04050b; border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; font-family: var(--mono); font-size: 12.5px; line-height: 1.55; max-height: 380px; min-height: 160px; overflow: auto; white-space: pre-wrap; color: #b8c2ee; }
+:root[data-theme="light"] .terminal { background: #fdfdff; color: #2b3260; }
+.terminal .w { color: var(--amber); }
+.terminal .e { color: var(--red); }
+.terminal .g { color: var(--led); }
+.progress { height: 6px; border-radius: 999px; overflow: hidden; background: rgba(124, 146, 255, 0.15); }
+.progress i { display: block; height: 100%; width: 40%; border-radius: 999px; background: linear-gradient(90deg, var(--cyan), var(--violet), var(--pink)); animation: slide 1.2s ease-in-out infinite; }
+.progress.done i { animation: none; width: 100%; background: var(--led); }
+.progress.fail i { animation: none; width: 100%; background: var(--red); }
+@keyframes slide { 0% { margin-left: -40%; } 100% { margin-left: 100%; } }
+.summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.stat { padding: 14px; border: 1px solid var(--line); border-radius: 14px; background: rgba(124, 146, 255, 0.05); }
+.stat .v { font-size: 26px; font-weight: 800; font-family: var(--mono); color: var(--accent); }
+.stat .l { font-size: 12px; color: var(--muted); letter-spacing: .05em; text-transform: uppercase; }
+
+.toast-wrap { position: fixed; right: 20px; bottom: 20px; z-index: 9500; display: flex; flex-direction: column; gap: 10px; }
+.toast { max-width: 380px; padding: 12px 16px; border-radius: 12px; border: 1px solid var(--line-hi); background: #0e1226f5; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5); animation: pop .3s both; }
+.toast.bad { border-color: var(--red); }
+.toast.ok { border-color: var(--led); }
+:root[data-theme="light"] .toast { background: #fffffff2; }
+.hidden { display: none !important; }
+.sr { position: absolute; left: -9999px; }
+.footer-note { margin-top: 44px; color: var(--faint); font-size: 12.5px; text-align: center; }
+.kbd { font-family: var(--mono); font-size: 12px; padding: 1px 6px; border-radius: 6px; border: 1px solid var(--line-hi); color: var(--muted); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
+}
+@media (max-width: 720px) { header.top { padding: 10px 14px; } main { padding: 20px 14px 70px; } nav.steps { margin-left: 0; } }
+
+/* Added 12/10/2026 (web UI feedback round 3): the explanation under a drop-down (see optionHelp in app.js). */
+.option-help { margin-top: 8px; }
+.option-help details { margin-top: 6px; font-size: 13px; }
+.option-help summary { color: var(--cyan); }
+.option-help ul { margin: 8px 0 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; color: var(--muted); }
+.option-help li b { color: var(--text); }
+
+/* Added 12/10/2026 (web UI feedback round 3): titled blocks inside "Movesets, items and variety" and
+   "Levels and extra Pokemon" (see SUBGROUPS in app.js). */
+.tier-legend { display: grid; gap: 4px; padding: 10px 12px; border: 1px dashed var(--line-hi); border-radius: 10px; font-size: 13px; color: var(--muted); }
+.tier-legend b { color: var(--text); }
+.subblock { padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; }
+.subblock h4 { margin: 0 0 2px; font-size: 15px; }
+.tier-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.tier-cell { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 12px; border-radius: 10px; background: rgba(124, 146, 255, 0.06); }
+.subblock .now { font-size: 13px; color: var(--faint); }
+.subblock .now.on { color: var(--accent); }

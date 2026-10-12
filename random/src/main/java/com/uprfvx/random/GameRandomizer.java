@@ -272,6 +272,10 @@ public class GameRandomizer {
         // Applied before anything that can be carried up evolutions, so the new evos are used for that.
         maybeRandomizeEvolutions();
 
+        // Modified from FVX (10/10/2026): the user's own evolution edits, applied right after the game's evolution
+        // step so that everything that follows sees them.
+        maybeEditEvolutionStructure();
+
         maybeRandomizeSpeciesBaseStatTotals();
 
         // Applied after both evo and BST randomization, so the right evos/BSTs are used.
@@ -282,9 +286,14 @@ public class GameRandomizer {
         maybeRandomizeSpeciesTypes();
         maybeRandomizeWildHeldItems();
         maybeRandomizeSpeciesBaseStats();
+        maybeApplyStatFloor();
+        // Added for YAO (11/10/2026): runs after both whole-dex base stat randomization and the automatic stat
+        // floor, so a manual per-species edit is always the final word for that species.
+        maybeApplyStatEdits();
         maybeRandomizeSpeciesAbilities();
 
         maybeApplyEvolutionImprovements();
+        maybeEditEvolutionLevels();
 
         // Applied after species types both some settings and the in-game strings should depend on the new types.
         maybeRandomizeStarters();
@@ -306,6 +315,7 @@ public class GameRandomizer {
         maybeFixTrainerZCrystals();
 
         maybeRandomizeTrainerHeldItems();
+        maybeApplyMegaFinale();
         maybeRandomizeTrainerNames();
 
         // Apply metronome only mode now that trainers have been dealt with
@@ -325,6 +335,241 @@ public class GameRandomizer {
         maybeRandomizePokemonPalettes();
 
         maybeRandomizeIntroPokemon();
+
+        maybeCheckForSoftlocks();
+        maybeApplyEggBoxes();
+        maybeApplyPlayerSprites();
+        maybeApplyShinyChance();
+        maybeApplyLocke();
+    }
+
+    // ---- Modified from FVX (10/10/2026): stat floor and custom evolutions ----
+
+    private com.uprfvx.random.yao.EvolutionEditor evolutionEditor;
+
+    private com.uprfvx.random.yao.EvolutionEditor evolutionEditor() {
+        if (evolutionEditor == null) {
+            final java.util.Map<Integer, com.uprfvx.romio.gamedata.Species> byNumber = new java.util.HashMap<>();
+            for (com.uprfvx.romio.gamedata.Species sp : romHandler.getSpeciesSetInclFormes()) {
+                if (sp != null && (!byNumber.containsKey(sp.getNumber()) || sp.isBaseForme())) {
+                    byNumber.put(sp.getNumber(), sp);
+                }
+            }
+            final java.util.List<com.uprfvx.romio.gamedata.Item> items = romHandler.getItems();
+            final java.util.List<com.uprfvx.romio.gamedata.Move> moves = romHandler.getMoves();
+            evolutionEditor = new com.uprfvx.random.yao.EvolutionEditor(new com.uprfvx.random.yao.EvolutionEditor.World() {
+                @Override
+                public int generation() {
+                    return romHandler.generationOfPokemon();
+                }
+
+                @Override
+                public com.uprfvx.romio.gamedata.Species species(int number) {
+                    return byNumber.get(number);
+                }
+
+                @Override
+                public boolean itemExists(int id) {
+                    return id > 0 && id < items.size() && items.get(id) != null;
+                }
+
+                @Override
+                public boolean moveExists(int id) {
+                    return id > 0 && id < moves.size() && moves.get(id) != null;
+                }
+            }, settings.getYaoSettings());
+        }
+        return evolutionEditor;
+    }
+
+    private void maybeEditEvolutionStructure() {
+        com.uprfvx.random.yao.YaoSettings yao = settings.getYaoSettings();
+        if (yao.getEvolutionEdits().isEmpty() && yao.getEvolutionRemovals().isEmpty()) {
+            return;
+        }
+        try {
+            yao.getEvolutionEdits(); // nothing else to prepare
+            evolutionEditor().applyStructural().forEach(yao::addRunNote);
+        } catch (RuntimeException e) {
+            yao.addRunNote("Custom evolutions could not be applied (" + e + ").");
+        }
+    }
+
+    private void maybeEditEvolutionLevels() {
+        com.uprfvx.random.yao.YaoSettings yao = settings.getYaoSettings();
+        if (yao.getEvolutionEdits().isEmpty() && yao.getEvolutionScalePercent() == 0) {
+            return;
+        }
+        try {
+            evolutionEditor().applyLevels().forEach(yao::addRunNote);
+        } catch (RuntimeException e) {
+            yao.addRunNote("Evolution levels could not be adjusted (" + e + ").");
+        }
+    }
+
+    private void maybeApplyStatFloor() {
+        com.uprfvx.random.yao.YaoSettings yao = settings.getYaoSettings();
+        if (yao.getBoostFloorBst() == 0) {
+            return;
+        }
+        try {
+            com.uprfvx.random.yao.StatFloorApplier.apply(romHandler.getSpeciesSetInclFormes(), yao)
+                    .forEach(yao::addRunNote);
+        } catch (RuntimeException e) {
+            yao.addRunNote("The stat floor could not be applied (" + e + ").");
+        }
+    }
+
+    /** Added for YAO (11/10/2026): the precise, single-Pokemon stat editor, see {@link com.uprfvx.random.yao.PerSpeciesStatEditor}. */
+    private void maybeApplyStatEdits() {
+        com.uprfvx.random.yao.YaoSettings yao = settings.getYaoSettings();
+        if (yao.getStatEdits().isEmpty()) {
+            return;
+        }
+        try {
+            com.uprfvx.random.yao.PerSpeciesStatEditor.apply(romHandler.getSpeciesSetInclFormes(), yao)
+                    .forEach(yao::addRunNote);
+        } catch (RuntimeException e) {
+            yao.addRunNote("The stat edits could not be applied (" + e + ").");
+        }
+    }
+
+    /**
+     * Modified from FVX (10/10/2026): Locke and Soft-locke modes. Never fails the randomization, each part
+     * reports what it did.
+     */
+    private void maybeApplyLocke() {
+        com.uprfvx.random.yao.YaoSettings yao = settings.getYaoSettings();
+        if (yao.getLockeMode() == com.uprfvx.random.yao.YaoSettings.LockeMode.NONE) {
+            return;
+        }
+        try {
+            for (String note : com.uprfvx.random.yao.LockeModeApplier.apply(romHandler, yao.getLockeMode(),
+                    yao.isCodePatchesAccepted())) {
+                yao.addRunNote(note);
+            }
+        } catch (RuntimeException e) {
+            yao.addRunNote("Locke mode could not be applied (" + e + ").");
+        }
+    }
+
+    /**
+     * Modified from FVX (10/10/2026): the adjustable shiny chance. Applied last, and it never fails the
+     * randomization: if the game cannot take it, a note explains why and the ROM is left as it was.
+     */
+    /** Modified from YAO (10/10/2026): replaces the player's walking sprites with the sheets the user chose. */
+    private void maybeApplyPlayerSprites() {
+        com.uprfvx.random.yao.YaoSettings yao = settings.getYaoSettings();
+        if (yao.getPlayerSpriteMale().isEmpty() && yao.getPlayerSpriteFemale().isEmpty()) {
+            return;
+        }
+        com.uprfvx.romio.romhandlers.FeatureAvailability availability = romHandler.checkPlayerSprites();
+        if (!availability.available()) {
+            yao.addRunNote("Player sprites: NOT applied. " + availability.reason());
+            return;
+        }
+        java.awt.image.BufferedImage male = readSheet(yao.getPlayerSpriteMale(), "boy");
+        java.awt.image.BufferedImage female = readSheet(yao.getPlayerSpriteFemale(), "girl");
+        if (male == null && female == null) {
+            return;
+        }
+        com.uprfvx.romio.romhandlers.PatchResult result;
+        try {
+            result = romHandler.applyPlayerSprites(male, female);
+        } catch (RuntimeException e) {
+            result = com.uprfvx.romio.romhandlers.PatchResult.notApplied("The player's sprites could not be replaced (" + e + ").");
+        }
+        yao.addRunNote("Player sprites: " + (result.applied() ? "applied. " : "NOT applied. ") + result.message());
+    }
+
+    private java.awt.image.BufferedImage readSheet(String path, String who) {
+        if (path == null || path.isEmpty()) {
+            return null;
+        }
+        try {
+            java.awt.image.BufferedImage image = javax.imageio.ImageIO.read(new java.io.File(path));
+            if (image == null) {
+                settings.getYaoSettings().addRunNote("Player sprites: the file for the " + who + " is not an image: " + path);
+            }
+            return image;
+        } catch (java.io.IOException | RuntimeException e) {
+            settings.getYaoSettings().addRunNote("Player sprites: the file for the " + who + " could not be read (" + e.getMessage() + ").");
+            return null;
+        }
+    }
+
+    /** Modified from YAO (10/10/2026): reports randomizations that may block the game, see {@link com.uprfvx.random.yao.SoftlockValidator}. */
+    private void maybeCheckForSoftlocks() {
+        try {
+            java.util.List<String> problems = com.uprfvx.random.yao.SoftlockValidator.check(
+                    com.uprfvx.random.yao.SoftlockValidator.of(romHandler));
+            for (String problem : problems) {
+                settings.getYaoSettings().addRunNote("Softlock warning: " + problem);
+            }
+            if (problems.isEmpty()) {
+                settings.getYaoSettings().addRunNote("Softlock check: no problem found with the field moves the game needs early on.");
+            }
+        } catch (RuntimeException e) {
+            settings.getYaoSettings().addRunNote("Softlock check could not run (" + e + ").");
+        }
+    }
+
+    /**
+     * Modified from YAO (10/10/2026): the egg box. The species are picked after everything else that can change the
+     * Pokemon of the game (so evolution lines and legendary status are final), with the same seeded generator.
+     */
+    private void maybeApplyEggBoxes() {
+        com.uprfvx.random.yao.YaoSettings yao = settings.getYaoSettings();
+        if (yao.getEggBoxCount() <= 0) {
+            return;
+        }
+        com.uprfvx.romio.romhandlers.FeatureAvailability availability = romHandler.checkEggBoxes();
+        if (!availability.available()) {
+            yao.addRunNote("Egg box (" + yao.getEggBoxCount() + " eggs): NOT applied. " + availability.reason());
+            return;
+        }
+        com.uprfvx.random.yao.EggBoxSelector.Result picked = com.uprfvx.random.yao.EggBoxSelector.pick(
+                romHandler.getSpeciesSet(), yao, randomSource.getNonCosmetic());
+        for (String note : picked.notes()) {
+            yao.addRunNote("Egg box: " + note);
+        }
+        if (picked.eggs().isEmpty()) {
+            return;
+        }
+        com.uprfvx.romio.romhandlers.PatchResult result;
+        try {
+            result = romHandler.applyEggBoxes(picked.eggs());
+        } catch (RuntimeException e) {
+            result = com.uprfvx.romio.romhandlers.PatchResult.notApplied("The egg box could not be applied (" + e + ").");
+        }
+        StringBuilder names = new StringBuilder();
+        for (com.uprfvx.romio.gamedata.Species egg : picked.eggs()) {
+            names.append(names.length() == 0 ? "" : ", ").append(egg.getFullName());
+        }
+        yao.addRunNote("Egg box: " + (result.applied() ? "applied. " : "NOT applied. ") + result.message()
+                + (result.applied() ? " Eggs: " + names + "." : ""));
+    }
+
+    private void maybeApplyShinyChance() {
+        double percent = settings.getYaoSettings().getShinyChancePercent();
+        if (percent <= 0) {
+            return;
+        }
+        if (!settings.getYaoSettings().isCodePatchesAccepted()) {
+            settings.getYaoSettings().addRunNote("Shiny chance " + String.format(java.util.Locale.ROOT, "%.1f", percent)
+                    + " percent: NOT applied. It changes the game's program code and the notice about that was not "
+                    + "accepted.");
+            return;
+        }
+        com.uprfvx.romio.romhandlers.PatchResult result;
+        try {
+            result = romHandler.applyShinyChance(percent);
+        } catch (RuntimeException e) {
+            result = com.uprfvx.romio.romhandlers.PatchResult.notApplied(
+                    "The shiny chance could not be applied (" + e + ").");
+        }
+        settings.getYaoSettings().addRunNote("Shiny chance " + String.format(java.util.Locale.ROOT, "%.1f", percent) + " percent: "
+                + (result.applied() ? "applied. " : "NOT applied. ") + result.message());
     }
 
     private void maybeRandomizeTypeEffectiveness() {
@@ -433,8 +678,17 @@ public class GameRandomizer {
         }
 
         // Easier evolutions
-        if (settings.isMakeEvolutionsEasier()) {
+        // Modified from YAO (12/10/2026): "fully evolved by level" is independent of the Make Evolutions Easier
+        // checkbox. When set, it condenses level evolutions on its own and replaces the native level.
+        int fullyEvolvedLevel = settings.getYaoSettings().getFullyEvolvedByLevel();
+        if (fullyEvolvedLevel > 0) {
+            romHandler.condenseLevelEvolutions(fullyEvolvedLevel);
+            settings.getYaoSettings().addRunNote("Fully evolved by level " + fullyEvolvedLevel
+                    + ": level evolutions above that level were brought down to it (middle stages by 75% of it).");
+        } else if (settings.isMakeEvolutionsEasier()) {
             romHandler.condenseLevelEvolutions(settings.getMakeEvolutionsEasierLvl());
+        }
+        if (settings.isMakeEvolutionsEasier()) {
             boolean wildsRandomizer = settings.isRandomizeWildPokemon();
             romHandler.makeEvolutionsEasier(wildsRandomizer, useEstimatedLevels);
         }
@@ -574,6 +828,7 @@ public class GameRandomizer {
         if (settings.getBattleStyle().isBattleStyleChanged()) {
             trainerPokeRandomizer.modifyBattleStyle();
         }
+        maybeApplyBattleStyleRules();
 
         if ((settings.getTrainersMod() != Settings.TrainersMod.UNCHANGED
                 || settings.getStartersMod() != Settings.StartersMod.UNCHANGED)
@@ -609,6 +864,46 @@ public class GameRandomizer {
                 || settings.isRandomizeHeldItemsForImportantTrainerPokemon()
                 || settings.isRandomizeHeldItemsForRegularTrainerPokemon()) {
             trainerPokeRandomizer.randomizeTrainerHeldItems();
+        }
+    }
+
+    /** Modified from YAO (12/10/2026): chance-based double/triple/rotation battles, see {@link com.uprfvx.random.yao.BattleStyleRules}. */
+    private void maybeApplyBattleStyleRules() {
+        com.uprfvx.random.yao.YaoSettings yao = settings.getYaoSettings();
+        if (yao.getBattleStyleRules().isEmpty()) {
+            return;
+        }
+        try {
+            for (String note : com.uprfvx.random.yao.BattleStyleRules.apply(romHandler.getTrainers(),
+                    yao.getBattleStyleRules(), romHandler.generationOfPokemon(), romHandler.getROMType(),
+                    randomSource.getNonCosmetic())) {
+                yao.addRunNote(note);
+            }
+            romHandler.makeDoubleBattleModePossible();
+        } catch (RuntimeException e) {
+            yao.addRunNote("Battle style rules could not be applied (" + e + ").");
+        }
+    }
+
+    /** Modified from YAO (10/10/2026): the last Pokemon of trainers is a Mega, see {@link com.uprfvx.random.yao.MegaFinaleApplier}. */
+    private void maybeApplyMegaFinale() {
+        com.uprfvx.random.yao.YaoSettings yao = settings.getYaoSettings();
+        if (!yao.isMegaFinaleOn()) {
+            return;
+        }
+        if (!romHandler.hasMegaEvolutions()) {
+            yao.addRunNote("Mega finale: NOT applied. This game has no Mega Evolutions for trainers to use.");
+            return;
+        }
+        try {
+            for (String note : com.uprfvx.random.yao.MegaFinaleApplier.apply(romHandler.getTrainers(),
+                    romHandler.getMegaEvolutions(), yao.getMegaFinaleSelection(), yao.isMegaFinaleReplace(),
+                    romHandler.generationOfPokemon(), romHandler.getROMType(),
+                    randomSource.getNonCosmetic())) {
+                yao.addRunNote(note);
+            }
+        } catch (RuntimeException e) {
+            yao.addRunNote("Mega finale could not be applied (" + e + ").");
         }
     }
 
@@ -675,6 +970,21 @@ public class GameRandomizer {
     }
 
     private void maybeRandomizeShops() {
+        // Modified from FVX (10/10/2026): protected items (the basics and any chosen) keep their original slots.
+        java.util.Set<Integer> protectedIds = settings.getYaoSettings().effectiveProtectedShopItems();
+        boolean randomizing = settings.getShopItemsMod() != Settings.ShopItemsMod.UNCHANGED;
+        java.util.List<com.uprfvx.romio.gamedata.Shop> shopsBefore = null;
+        if (randomizing && !protectedIds.isEmpty()) {
+            try {
+                shopsBefore = itemRandomizer.snapshotShops();
+            } catch (RuntimeException e) {
+                settings.getYaoSettings().addRunNote("Protected shop items could not be applied (" + e + ").");
+            }
+        }
+        if (randomizing && !itemRandomizer.hasRandomizableShops()) {
+            settings.getYaoSettings().addRunNote("This game has no shop that shop randomization may change (the regular shops are never "
+                    + "randomized), so the shop randomization option did nothing.");
+        }
         switch (settings.getShopItemsMod()) {
             case SHUFFLE:
                 itemRandomizer.shuffleShopItems();
@@ -682,11 +992,24 @@ public class GameRandomizer {
             case RANDOM:
                 itemRandomizer.randomizeShopItems();
         }
+        if (shopsBefore != null) {
+            try {
+                int restored = itemRandomizer.restoreProtectedShopItems(shopsBefore, protectedIds);
+                settings.getYaoSettings().addRunNote("Protected shop items: " + restored
+                        + " shop slot(s) kept their original item (" + protectedIds.size() + " protected item types).");
+            } catch (RuntimeException e) {
+                settings.getYaoSettings().addRunNote("Protected shop items could not be applied (" + e + ").");
+            }
+        }
         if (settings.isBalanceShopPrices()) {
             romHandler.setBalancedShopPrices();
         }
         if (settings.isAddCheapRareCandiesToShops()) {
             itemRandomizer.addCheapRareCandiesToShops();
+        }
+        // Modified from FVX (10/10/2026): custom shop items are added last so that shop randomization cannot remove them.
+        if (!settings.getYaoSettings().getCustomShopItems().isEmpty()) {
+            itemRandomizer.addCustomItemsToShops(settings.getYaoSettings().getCustomShopItems());
         }
     }
 
@@ -698,6 +1021,13 @@ public class GameRandomizer {
 
     private void maybeRandomizePokemonPalettes() {
         if (settings.getPokemonPalettesMod() == Settings.PokemonPalettesMod.RANDOM) {
+            // Modified from FVX (10/10/2026): games without palette support have no palette randomizer. The option
+            // can still arrive through a settings file or string, and used to crash the randomization.
+            if (paletteRandomizer == null) {
+                settings.getYaoSettings().addRunNote("Pokemon palette randomization is not available for this game "
+                        + "and was skipped.");
+                return;
+            }
             paletteRandomizer.randomizePokemonPalettes();
         }
     }

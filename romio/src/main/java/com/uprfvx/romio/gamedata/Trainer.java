@@ -314,8 +314,72 @@ public class Trainer implements Comparable<Trainer> {
     }
 
     public boolean isBoss() {
+        // Modified from FVX (11/10/2026): added the KAHUNA prefix so the Sun/Moon and Ultra Sun/Ultra Moon
+        // island kahunas (retagged out of the shared ELITE family, see Gen7Constants) keep counting as boss
+        // tier, same as before the retag.
         return tag != null && (tag.startsWith("ELITE") || tag.startsWith("CHAMPION")
-                || tag.startsWith("UBER") || tag.endsWith("LEADER"));
+                || tag.startsWith("UBER") || tag.startsWith("KAHUNA") || tag.endsWith("LEADER"));
+    }
+
+    private static final java.util.regex.Pattern GYM_LEADER_TAG = java.util.regex.Pattern.compile("^GYM\\d+-LEADER$");
+    private static final java.util.regex.Pattern GIOVANNI_LEADER_TAG = java.util.regex.Pattern.compile("^GIO\\d*-LEADER$");
+
+    /**
+     * Added for YAO (11/10/2026): a narrower tier than {@link #isBoss()}, used by the mega finale feature's
+     * "gym leaders + league" scope. True gym leaders only ({@code GYM<n>-LEADER}, plus Giovanni's
+     * FireRed/LeafGreen Rocket-boss variant {@code GIO<n>-LEADER}, who is that game's final gym leader), the
+     * real Elite Four (the {@code ELITE} tag, now that the Sun/Moon and Ultra Sun/Ultra Moon kahunas have
+     * their own {@code KAHUNA} tag and are counted here as leader-equivalent, being the closest thing those
+     * games have to gym leaders), the Champion ({@code CHAMPION} tag), and Uber-tier trainers ({@code UBER}:
+     * Red in HeartGold/SoulSilver, Cynthia/Ghetsis/N in Black/White, the Rainbow Rocket bosses in Ultra
+     * Sun/Ultra Moon). Deliberately excludes evil-team "boss" tags ({@code THEMED:<name>-LEADER} and HGSS's
+     * bare {@code "LEADER"} on Archer), see {@link #isEvilTeamBoss()}.
+     *
+     * <p>Red/Blue/Yellow/Green, FireRed/LeafGreen and Sun/Moon/Ultra Sun/Ultra Moon give the Champion role to
+     * a tagged Rival battle instead of a {@code CHAMPION} tag; that case needs game context this method does
+     * not have and is handled by the caller (see {@code MegaFinaleApplier}).
+     */
+    public boolean isGymLeaderOrLeagueTier() {
+        return isGymLeader() || isLeagueTier();
+    }
+
+    /**
+     * Modified from FVX (12/10/2026): split out of {@link #isGymLeaderOrLeagueTier()} so features can pick gym
+     * leaders and the league independently. True gym leaders only (see that method for the tags).
+     */
+    public boolean isGymLeader() {
+        return tag != null && (GYM_LEADER_TAG.matcher(tag).matches() || GIOVANNI_LEADER_TAG.matcher(tag).matches());
+    }
+
+    /**
+     * Modified from FVX (12/10/2026): the league half of {@link #isGymLeaderOrLeagueTier()}: Elite Four, kahunas,
+     * Champion and Uber-tier trainers, by tag. Games that give the Champion role to a tagged Rival need game context,
+     * see {@code com.uprfvx.random.yao.TrainerGroups}.
+     */
+    public boolean isLeagueTier() {
+        return tag != null && (tag.startsWith("ELITE") || tag.startsWith("KAHUNA") || tag.startsWith("CHAMPION")
+                || tag.startsWith("UBER"));
+    }
+
+    /** Modified from FVX (12/10/2026): the highest level among this trainer's Pokemon, 0 if it has none. */
+    public int getHighestLevel() {
+        int highest = 0;
+        for (TrainerPokemon tp : pokemon) {
+            highest = Math.max(highest, tp.getLevel());
+        }
+        return highest;
+    }
+
+    /**
+     * Added for YAO (11/10/2026): true for evil-team leader trainers only (Team Rocket/Magma/Aqua/Galactic/
+     * Plasma/Flare/Skull+Aether), tagged {@code THEMED:<name>-LEADER}, plus HGSS's Archer who is tagged bare
+     * {@code "LEADER"} (not gym-related). These already count as boss tier under {@link #isBoss()} (its
+     * {@code endsWith("LEADER")} check is ambiguous on purpose there) but are deliberately excluded from
+     * {@link #isGymLeaderOrLeagueTier()}; used by the mega finale feature's independent "include evil-team
+     * bosses" choice.
+     */
+    public boolean isEvilTeamBoss() {
+        return tag != null && ("LEADER".equals(tag) || (tag.startsWith("THEMED:") && tag.endsWith("-LEADER")));
     }
 
     public boolean isImportant() {

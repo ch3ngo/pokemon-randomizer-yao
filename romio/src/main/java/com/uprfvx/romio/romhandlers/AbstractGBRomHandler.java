@@ -513,6 +513,12 @@ public abstract class AbstractGBRomHandler extends AbstractRomHandler {
     public abstract AbstractGBRomEntry getRomEntry();
 
     @Override
+    public RomIntegrityReport getIntegrityReport() {
+        // Modified from FVX (10/10/2026)
+        return RomIntegrityReport.wholeRom(generationOfPokemon(), getRomEntry().getExpectedCRC32(), actualCRC32);
+    }
+
+    @Override
     public boolean isRomValid(PrintStream logStream) {
         if (logStream != null) {
             System.out.println("Checking CRC32 validity");

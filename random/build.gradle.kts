@@ -28,7 +28,8 @@ dependencies {
 }
 
 tasks.jar {
-    archiveFileName.set("UPR-FVX.jar")
+    // Renamed from FVX's UPR-FVX.jar (11/10/2026): this is our own build, not an FVX build.
+    archiveFileName.set("PokemonRandomizerYAO.jar")
     manifest {
         attributes("Main-Class" to "com.uprfvx.random.gui.RandomizerGUI")
     }
@@ -130,7 +131,10 @@ PlatformConfig.entries.forEach { cfg ->
 
         val modulePath = layout.buildDirectory.dir("jmods/decompressed/${cfg.name}/jmods")
         val outputDir = layout.buildDirectory.dir("java-runtime-image/${cfg.name}")
-        val modules = "java.base,java.desktop,java.logging,java.naming"
+        // jdk.httpserver added (modified from FVX, 11/10/2026): the web interface (com.uprfvx.random.web.WebServer)
+        // uses com.sun.net.httpserver.HttpServer, which lives in that module; release builds crashed with
+        // NoClassDefFoundError without it since this jlink module list predates the web interface.
+        val modules = "java.base,java.desktop,java.logging,java.naming,jdk.httpserver"
 
         doFirst {
             // jlink silently falls back to the running JDK's system modules
@@ -159,11 +163,20 @@ PlatformConfig.entries.forEach { cfg ->
         dependsOn("clearReleaseDir")
         dependsOn(jlink)
 
+        // Restructured (packaging cleanup, 11/10/2026): the zip root used to mix the launcher scripts
+        // with a pile of program internals (jar, data/, bundled java/ runtime), which read as confusing.
+        // Now the zip root only has the launchers and the README; everything else lives under app/.
         from("src/main/resources") {
             exclude("data/custom_player_graphics_unused")
             exclude("com")
+            into("app")
         }
-        val launcherName = "launcher.${cfg.launcherExtension}"
+        // Renamed from FVX's unqualified "launcher.*" (11/10/2026): that name made the old, unbranded
+        // Swing interface look like the main way to start the program. The web interface (web-launcher.*)
+        // is the recommended one; this legacy name makes that unambiguous in the zip's file listing.
+        val launcherName = "legacy-swing-launcher.${cfg.launcherExtension}"
+        // Moved into app/ (packaging cleanup, 11/10/2026): the zip root now contains only
+        // web-launcher.*, so the legacy launcher and the README move alongside the jar.
         from("src/main/launcher") {
             include("README.txt")
             expand("launcherName" to launcherName)
@@ -174,15 +187,23 @@ PlatformConfig.entries.forEach { cfg ->
                     else -> line
                 }
             }
-
+            into("app")
         }
         from("src/main/launcher") {
-            include("**.${cfg.launcherExtension}")
-            rename {launcherName}
+            include("launcher_*.${cfg.launcherExtension}")
+            rename { launcherName }
+            into("app")
         }
-        from(layout.buildDirectory.dir("libs"))
+        // Modified from YAO (10/10/2026): a second launcher that opens the local web interface.
+        from("src/main/launcher") {
+            include("web-launcher_*.${cfg.launcherExtension}")
+            rename { "web-launcher.${cfg.launcherExtension}" }
+        }
+        from(layout.buildDirectory.dir("libs")) {
+            into("app")
+        }
         from(layout.buildDirectory.dir("java-runtime-image/${cfg.name}")) {
-            into("java")
+            into("app/java")
         }
 
         into(layout.buildDirectory.dir("target/${cfg.name}"))
@@ -199,7 +220,8 @@ PlatformConfig.entries.forEach { cfg ->
         doFirst {
             // needs to be inside doFirst because extra["randomizerVersion"] is not defined before getVersionName runs.
             val versionName = (rootProject.extra["randomizerVersion"] as String).replace(".", "_")
-            archiveFileName = "UPR_FVX-${versionName}-${cfg.name}.zip"
+            // Renamed from FVX's UPR_FVX-* naming (11/10/2026): this is our own build, not an FVX build.
+            archiveFileName = "pkmn-rnd-yao_${versionName}-${cfg.name}.zip"
         }
     }
     zipTasks.add(zip)
@@ -239,12 +261,13 @@ tasks.register<Exec>("launch") {
     val platform: PlatformConfig = detectPlatform()
     dependsOn("moveIntoReleaseDir${taskName(platform)}")
 
-    workingDir(layout.buildDirectory.dir("target/${platform.name}"))
+    // The legacy launcher now lives inside app/ alongside the jar (packaging cleanup, 11/10/2026).
+    workingDir(layout.buildDirectory.dir("target/${platform.name}/app"))
 	if (platform == PlatformConfig.Windows) {
-		commandLine("cmd", "/c", "launcher.${platform.launcherExtension}")
+		commandLine("cmd", "/c", "legacy-swing-launcher.${platform.launcherExtension}")
 	} else {
 		// Not tested on Mac due to a lack of devices to test on.
-		commandLine("bash", "./launcher.${platform.launcherExtension}")
+		commandLine("bash", "./legacy-swing-launcher.${platform.launcherExtension}")
 	}
 }
 
@@ -252,13 +275,14 @@ tasks.register<Exec>("relaunch") {
     group = "launch"
     val platform: PlatformConfig = detectPlatform()
 
-    workingDir(layout.buildDirectory.dir("target/${platform.name}"))
-	
+    // The legacy launcher now lives inside app/ alongside the jar (packaging cleanup, 11/10/2026).
+    workingDir(layout.buildDirectory.dir("target/${platform.name}/app"))
+
     if (platform == PlatformConfig.Windows) {
-		commandLine("cmd", "/c", "launcher.${platform.launcherExtension}")
+		commandLine("cmd", "/c", "legacy-swing-launcher.${platform.launcherExtension}")
 	} else {
 		// Not tested on Mac due to a lack of devices to test on.
-		commandLine("bash", "./launcher.${platform.launcherExtension}")
+		commandLine("bash", "./legacy-swing-launcher.${platform.launcherExtension}")
 	}
 }
 
@@ -282,7 +306,7 @@ tasks.register<Test>("testROMs") {
 
     useJUnitPlatform()
     ignoreFailures = true
-    maxHeapSize = "4G"
+    maxHeapSize = "6G"
 
     filter {
         includeTestsMatching("*Randomizer*Test")

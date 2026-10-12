@@ -1,111 +1,112 @@
-# Pokemon Randomizer YAO
+<p align="center">
+  <img src="docs/images/logo.svg" alt="Pokemon Randomizer YAO logo" width="140">
+</p>
 
-> Yet Another One. A Pokemon ROM randomizer for Gen 1 to Gen 7, built on top of Universal Pokemon Randomizer FVX, with extra tools for shops, shiny Pokemon, eggs, player sprites and safer randomization.
+<h1 align="center">Pokemon Randomizer YAO</h1>
 
-**Status: early development.** The current version behaves like Universal Pokemon Randomizer FVX 1.6.2. The additions listed under "In development" are being built and are not part of a release yet.
+<p align="center"><em>Yet Another One. A Pokemon ROM randomizer for Gen 1 to Gen 7 with a modern web interface, built on Universal Pokemon Randomizer FVX.</em></p>
 
----
+> **A friendly note.** This is a personal side project and a work in progress (alpha). Everything below has been run against the games listed in the tested table, but none of it has been played through from start to finish, so expect rough edges. If you find a bug or have an idea, please [open an issue](https://github.com/ch3ngo/pokemon-randomizer-yao/issues). No report is too small.
 
-## What it does
+## Download and run
 
-Pokemon Randomizer YAO shuffles and randomizes the data of the mainline Pokemon games: wild Pokemon, starters, trainers, static and gift encounters, in-game trades, moves, movesets, evolutions, abilities, items, shops, TMs and more. It aims to keep every randomization option of FVX and add more control on top.
+You need your own ROM of the game (this project does not include or distribute any). Nothing else to install: the download bundles its own Java.
 
-### Supported games
-
-Generation 1 to Generation 7, including the 3DS games up to Ultra Sun and Ultra Moon. Switch games are not supported. It is developed and tested with English and Spanish ROMs where both exist.
-
-### Included from FVX
-
-- Randomization of wild Pokemon, trainers, starters, trades, static and gift encounters, moves, movesets, evolutions, abilities, base stats, types, TMs, tutors, items and shops.
-- Many gameplay improvements, such as making HMs usable by every Pokemon.
-- Custom player graphics for Gen 1 to 3.
-- A graphical interface and a command line mode.
-- Release builds that bundle their own Java runtime, so Java does not need to be installed.
-
-### In development
-
-- Extra items in the shops, with a price for each (for example Rare Candy for 1), configurable per game.
-- Real shiny Pokemon with an adjustable chance, from none to all, for wild, static, gift, trainer and egg Pokemon.
-- Boxes of eggs placed directly in the game, filtered by type of Pokemon (legendary, non-legendary, three-stage lines and more).
-- Player sprite replacement for every generation, with a library of ready-made characters.
-- Protected item lists, so random shop items never replace the ones you chose.
-- Locke and Soft-locke modes for challenge runs.
-- A check that warns about randomizations known to get a game stuck.
-- A clear warning when a ROM is not an unmodified retail dump, listing which options may be affected.
-- An optional, spoiler-safe HTML guide of what was randomized, in English and Spanish.
-- A new, more modern look and native installers for Windows, macOS and Linux.
-
-## Running it
-
-A release archive contains its own Java runtime, so there is nothing to install first. This project has no release yet. When one is published it will be on the Releases page, with the same layout as the FVX release archives:
+1. Download the archive for your system from the [Releases page](https://github.com/ch3ngo/pokemon-randomizer-yao/releases) and extract it.
+2. Start it:
 
 | Platform | How to start it |
 |---|---|
-| Windows | Extract the archive and run `launcher.bat` |
-| Linux (x86 and ARM) | Extract the archive, then `chmod +x launcher.sh` and run `./launcher.sh` |
-| macOS (Intel and Apple Silicon) | Extract the archive and run `launcher.command` (the first time you may need to right click it and choose Open, because the app is not notarized) |
+| Windows | Run `web-launcher.bat` |
+| Linux (x86 and ARM) | `chmod +x web-launcher.sh`, then `./web-launcher.sh` |
+| macOS (Intel and Apple Silicon) | Run `web-launcher.command` (first time: right click, Open, because the app is not notarized) |
 
-Then open your ROM, choose your options and save the randomized ROM. Always keep a copy of your original ROM.
+3. Your browser opens the interface. Keep the launcher window open, choose your ROM, pick your options and save the randomized game. Your original ROM is never changed.
 
-### Your ROMs
+If something fails to start, the file `console_output.log` next to the launcher explains why: please include it in a bug report.
 
-You need your own ROM files. This project does not include or distribute any ROMs, and it does not include game data. The randomizer expects an unmodified retail dump; modified ROMs, ROM hacks and bad dumps may randomize incorrectly.
+**3DS games** must be decrypted. The randomizer can save the result as a Luma3DS patch folder (small, needs the same game version installed) or as a single `.cxi` file (1.7 to 3.5 GB).
 
-### 3DS games
+## Build it yourself
 
-3DS games must be **decrypted**. The randomizer reads `.3ds`/`.cci`, `.cia` and `.cxi` files. It can save the result as a `.cxi` file (very large, 1.7 to 3.5 GB) or as a LayeredFS folder, which is much smaller and also works on a 3DS with custom firmware. If you load a game update, the version of that update must match the one installed in your emulator or console. 3DS games need more memory; start with `-Xmx4096M` if you run the command line.
-
-## Building from source
-
-Most people should download a release (see above). To build it yourself:
-
-**You need** a full JDK 25 (not only a JRE: the compiler `javac` must be present) and Git. Gradle is included in the repository as `gradlew` (`gradlew.bat` on Windows), so it does not need to be installed.
+You need a full JDK 25 (with `javac`) and Git. Gradle is included.
 
 ```bash
 git clone https://github.com/ch3ngo/pokemon-randomizer-yao.git
 cd pokemon-randomizer-yao
-./gradlew build            # compiles everything and runs the tests that do not need ROMs
+./gradlew build            # compile everything and run the tests that need no ROMs
+./launch-web.sh            # build and open the web interface (launch-web.bat on Windows)
 ```
 
-The runnable jar ends up in `random/build/libs/UPR-FVX.jar`. Useful tasks:
+The jar is `random/build/libs/PokemonRandomizerYAO.jar`. `./gradlew :random:createReleaseZips` builds the archives for all five platforms (needs internet). More commands, the command line mode and the project layout are in [wiki/Building-from-source.md](wiki/Building-from-source.md).
 
-| Command | What it does |
+## What it is
+
+Pokemon Randomizer YAO randomizes the data of the mainline Pokemon games: wild Pokemon, starters, trainers, static and gift encounters, trades, moves, movesets, evolutions, abilities, base stats, types, items, shops, TMs and more. It keeps every option of FVX and adds more control, a browser interface that runs only on your computer, and a spoiler-safe HTML guide of the randomized game in English and Spanish.
+
+Supported: Generation 1 to 7, including the 3DS games up to Ultra Sun and Ultra Moon. No Switch games. English and Spanish ROMs are the focus.
+
+| | |
 |---|---|
-| `./gradlew :random:launch` | Builds a runnable copy for your platform (with its own Java runtime) and starts the program. The first run downloads the matching runtime modules, so it needs internet. The result is in `random/build/target/<platform>/`. |
-| `./gradlew :random:assemble` | Builds only the jar, without running tests. |
-| `./gradlew :random:createReleaseZips` | Builds the release archives for Windows, Linux (x86 and ARM) and macOS (Intel and Apple Silicon). Needs internet. |
-| `./gradlew test` | Runs the tests that do not need ROM files. |
-| `./gradlew romio:testROMs random:testROMs` | Runs the tests that load real ROMs. Put your own ROMs in `roms/`, named as described in `roms/readme.txt`. That folder is ignored by Git and nothing in it is ever committed. |
+| ![Choosing a game](docs/images/ui-game.png) | ![The randomizer settings](docs/images/ui-randomizer.png) |
+| Pick your game by dragging it in or with the file dialog. | Every option, grouped by topic, with an "i" button that explains it. |
+| ![Trainer options](docs/images/ui-trainers.png) | ![The HTML guide](docs/images/guide-wild.png) |
+| Trainer options, battle style chances and the mega finale. | The guide: searchable, spoiler-safe, English and Spanish names. |
 
-The command line mode is `java -jar random/build/libs/UPR-FVX.jar cli -h`. The program reads its `data/` folder (trainer names, player graphics) from the folder it is started in, which `launch` and the release archives take care of; if you run the bare jar, start it from a folder that contains a copy of `random/src/main/resources/data`. 3DS games need more memory, so add `-Xmx4096M` when running them.
+## Added by this project
 
-Project layout:
+Everything FVX does is included (randomization of all of the above, HM usability tweaks, custom player graphics for Gen 1 to 3, a command line mode, bundled Java). On top of it:
 
-```
-random/    randomizer logic, settings, command line and graphical interface
-romio/     reading and writing ROMs, one handler per generation, player graphics
-utils/     shared utilities
-docs/      documentation and wiki source
-roms/      your own ROMs for tests (ignored by Git)
-```
+| Feature | What it does |
+|---|---|
+| Real shiny chance | 0.1 to 100 percent for wild, static, gift, egg and trainer Pokemon, set inside the game's own shiny check (needs a code patch, so you confirm it first). Not available on FireRed. |
+| Egg box | Up to 90 randomized eggs from an in-game character, filtered by legendary, evolution line length and more. Emerald only for now. |
+| Shops | Add your own items with a price to every regular Poke Mart. Shuffle or randomize the special shops (balls and mail, department store floors, herbs, vitamins and so on). The regular Poke Marts are never randomized, and you can protect chosen items everywhere. |
+| Stat tools | Stat booster, a stat floor, and a per-Pokemon stat editor (scale or set exact base stats). |
+| Custom evolutions | Change, add or remove evolutions and lower evolution levels; invalid edits are refused. Gen 1 and 2: level only. |
+| Fully evolved by a level | Pull level-up evolutions earlier so everything is fully evolved by a level you choose. |
+| Mega finale | The last Pokemon of chosen trainers holds a mega stone. Only for games with Mega Evolutions. |
+| Battle style chances | A chosen share of a trainer group fights as double, triple or rotation battles, where the game allows it. |
+| Locke and Soft-locke (**experimental**) | Revive items removed and Pokemon Centers that stop reviving. Pokemon Center part on HeartGold, SoulSilver, Black 2 and White 2 only. |
+| Softlock check | Warns if no Pokemon you can get can learn a field move the game needs early on. |
+| Modified ROM warning | Tells you if a ROM is not an unmodified retail dump (Gen 1 to 5). |
+| HTML guide and log | A spoiler-safe, searchable page of everything randomized, plus a matching text log. |
+| Web interface | Runs in your browser, only on your own computer. |
+
+Limits worth knowing: a ROM editor cannot write to your save, so eggs come from an in-game character; Gen 2 trainer Pokemon use fixed values per trainer class, so a shiny chance is not exact for them. Details of each feature are in the [wiki folder](wiki/Home.md).
+
+## Tested so far
+
+"Tested" means the randomizer ran against that ROM with a broad set of options, the output was written and read back, and the guide and log were checked against the randomized data. It does not mean the game was played through in an emulator or on a console (Omega Ruby's output has never been booted).
+
+- **Tested:** Crystal (English), Emerald (English), FireRed, Diamond, Platinum, SoulSilver, Black, Black 2 (all English and Spanish), X, Omega Ruby, Sun, Ultra Sun (English).
+- **Not tested, no ROM available yet:** Red, Blue, Yellow, Gold, Silver, Ruby, Sapphire, LeafGreen, Pearl, HeartGold, White, White 2, Y, Alpha Sapphire, Moon, Ultra Moon. They are implemented at the code level. If you try one, please report what you find.
+- The Black and Black 2 ROMs used are "Fix" dumps, so the integrity check will warn.
+- Japanese, French, German and Italian ROMs are not a current focus.
+
+## Still in development
+
+Egg boxes for other generations, player sprite replacement for every generation with a sprite library, finishing Locke mode, a move editor, free replacement of HM moves, level caps, an option to avoid legendaries in static, gift and trade Pokemon, safe extra trainer Pokemon in back-to-back fights, and native installers.
+
+## Documentation
+
+The `wiki/` folder documents this project's own additions ([start here](wiki/Home.md)). For the original FVX options, the "i" buttons in the interface link to the [FVX wiki](https://upr-fvx.github.io/universal-pokemon-randomizer-fvx/), which is still the reference for them. This project has no published wiki of its own yet.
 
 ## Credits
 
-This project descends from a chain of forks, and all credit for the randomizer itself belongs to their authors:
+All credit for the randomizer itself belongs to the authors of the projects this descends from:
 
 - **[Dabomstew](https://github.com/Dabomstew/universal-pokemon-randomizer)**: the original Universal Pokemon Randomizer.
-- **Ajarmar** and the **UPR-ZX** team: [Universal Pokemon Randomizer ZX](https://github.com/Ajarmar/universal-pokemon-randomizer-zx), built on Dabomstew's work.
-- **FVX** ([foxoftheasterisk](https://github.com/foxoftheasterisk), [voliol](https://github.com/voliol)) and the [upr-fvx](https://github.com/upr-fvx/universal-pokemon-randomizer-fvx) contributors: Universal Pokemon Randomizer FVX, built on UPR-ZX.
-- **yao** (ch3ngo): the additions listed above, built on FVX.
+- **Ajarmar** and the **UPR-ZX** team: [Universal Pokemon Randomizer ZX](https://github.com/Ajarmar/universal-pokemon-randomizer-zx).
+- **FVX** ([foxoftheasterisk](https://github.com/foxoftheasterisk), [voliol](https://github.com/voliol)) and the [upr-fvx](https://github.com/upr-fvx/universal-pokemon-randomizer-fvx) contributors: Universal Pokemon Randomizer FVX.
+- **yao** (ch3ngo): the additions listed above.
 
-Changes in this fork are modifications of FVX and are marked as such in the code and the commit history, starting 10/10/2026. The original FVX readme is kept as `UPSTREAM_README.md`.
-
-Pokemon and all related names, sprites and game data belong to Nintendo, Game Freak and Creatures. This project is not affiliated with or endorsed by them.
+Changes are marked in the code and the commit history, starting 10/10/2026. The original FVX readme is kept as `UPSTREAM_README.md`. Pokemon and all related names, sprites and game data belong to Nintendo, Game Freak and Creatures; this project is not affiliated with them.
 
 ## License
 
 GPL-3.0-or-later, inherited from upstream. See `LICENSE.txt`. The source file headers of the original authors are kept intact.
 
-## Feedback
+## Feedback, bugs and ideas
 
-Issues are welcome on the Issues page. This is a personal project, so replies may take a while.
+Please use the [Issues page](https://github.com/ch3ngo/pokemon-randomizer-yao/issues) for bugs, confusing text, ideas, or games you tested that are not listed above. For a bug, it helps to include the game and its language, the settings (the web interface can export a `.rnqs` file), and the log. This is a spare-time project, so replies may take a while, but everything gets read.

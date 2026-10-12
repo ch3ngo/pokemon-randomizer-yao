@@ -132,7 +132,9 @@ public class MoveNameRandomizer extends Randomizer {
         usedMoveNames.clear();
         List<Move> moves = romHandler.getMoves();
         int maxNameLength = romHandler.getMaxMoveNameLength();
-        boolean useUpperCase = detectUpperCaseNames(moves.stream().map(mv -> mv.name).toList());
+        // Modified from FVX (10/10/2026): the move list has a null entry at index 0 (the loop below already skips
+        // nulls), so building the name list crashed whenever "randomize move names" was on, in every game.
+        boolean useUpperCase = detectUpperCaseNames(moves.stream().filter(java.util.Objects::nonNull).map(mv -> mv.name).toList());
         for (Move mv : moves) {
             if (mv != null && mv.internalId != MoveIDs.struggle) {
                 String name = getRandomMoveName(mv, mv.type, maxNameLength);

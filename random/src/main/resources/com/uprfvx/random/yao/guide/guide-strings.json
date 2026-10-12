@@ -1,0 +1,1206 @@
+{
+  "strings": {
+    "title": {
+      "en": "Pokemon Randomizer YAO guide",
+      "es": "Guía de Pokémon Randomizer YAO"
+    },
+    "showOrig": {
+      "en": "Show original values",
+      "es": "Mostrar valores originales"
+    },
+    "themeTip": {
+      "en": "Switch between dark and light theme",
+      "es": "Cambiar entre tema oscuro y claro"
+    },
+    "reveal": {
+      "en": "Reveal this section",
+      "es": "Mostrar esta sección"
+    },
+    "search": {
+      "en": "Search...",
+      "es": "Buscar..."
+    },
+    "all": {
+      "en": "All",
+      "es": "Todos"
+    },
+    "type": {
+      "en": "Type",
+      "es": "Tipo"
+    },
+    "name": {
+      "en": "Name",
+      "es": "Nombre"
+    },
+    "abilities": {
+      "en": "Abilities",
+      "es": "Habilidades"
+    },
+    "total": {
+      "en": "Total",
+      "es": "Total"
+    },
+    "statHp": {
+      "en": "HP",
+      "es": "PS"
+    },
+    "statAtk": {
+      "en": "Atk",
+      "es": "Ata"
+    },
+    "statDef": {
+      "en": "Def",
+      "es": "Def"
+    },
+    "statSpa": {
+      "en": "SpA",
+      "es": "AtE"
+    },
+    "statSpd": {
+      "en": "SpD",
+      "es": "DeE"
+    },
+    "statSpe": {
+      "en": "Spe",
+      "es": "Vel"
+    },
+    "tabOverview": {
+      "en": "Overview",
+      "es": "Resumen"
+    },
+    "tabPokemon": {
+      "en": "Pokemon",
+      "es": "Pokémon"
+    },
+    "tabMoves": {
+      "en": "Moves",
+      "es": "Movimientos"
+    },
+    "tabWild": {
+      "en": "Wild Pokemon",
+      "es": "Pokémon salvajes"
+    },
+    "tabFind": {
+      "en": "Where to find",
+      "es": "Dónde encontrarlos"
+    },
+    "tabStatic": {
+      "en": "Static and gift Pokemon",
+      "es": "Pokémon estáticos y regalos"
+    },
+    "tabTrades": {
+      "en": "Trades",
+      "es": "Intercambios"
+    },
+    "tabTrainers": {
+      "en": "Trainers",
+      "es": "Entrenadores"
+    },
+    "tabShops": {
+      "en": "Shops",
+      "es": "Tiendas"
+    },
+    "rom": {
+      "en": "Game",
+      "es": "Juego"
+    },
+    "seed": {
+      "en": "Seed",
+      "es": "Semilla"
+    },
+    "seedRandom": {
+      "en": "random",
+      "es": "aleatoria"
+    },
+    "date": {
+      "en": "Generated",
+      "es": "Generada el"
+    },
+    "gen": {
+      "en": "Generation",
+      "es": "Generación"
+    },
+    "warn": {
+      "en": "This guide reveals how the game was randomized. Using it may count as cheating if you are competing against someone.",
+      "es": "Esta guía revela cómo se ha aleatorizado el juego. Usarla puede considerarse trampa si compites contra otra persona."
+    },
+    "errors": {
+      "en": "Some sections could not be read",
+      "es": "No se han podido leer algunas secciones"
+    },
+    "changedLegend": {
+      "en": "Highlighted cells changed from the original game; the small crossed-out text is the original value. Hover a cell to see it too.",
+      "es": "Las celdas resaltadas han cambiado respecto al juego original; el texto pequeño tachado es el valor original. Pasa el ratón sobre una celda para verlo también."
+    },
+    "evo": {
+      "en": "Evolutions",
+      "es": "Evoluciones"
+    },
+    "learn": {
+      "en": "Moves learned",
+      "es": "Movimientos que aprende"
+    },
+    "egg": {
+      "en": "Egg moves",
+      "es": "Movimientos huevo"
+    },
+    "tms": {
+      "en": "TMs",
+      "es": "MT"
+    },
+    "hms": {
+      "en": "HMs",
+      "es": "MO"
+    },
+    "tut": {
+      "en": "Tutor moves",
+      "es": "Movimientos del tutor"
+    },
+    "none": {
+      "en": "None",
+      "es": "Ninguno"
+    },
+    "level": {
+      "en": "Lv.",
+      "es": "Nv."
+    },
+    "power": {
+      "en": "Power",
+      "es": "Potencia"
+    },
+    "acc": {
+      "en": "Acc.",
+      "es": "Prec."
+    },
+    "pp": {
+      "en": "PP",
+      "es": "PP"
+    },
+    "cat": {
+      "en": "Category",
+      "es": "Categoría"
+    },
+    "where": {
+      "en": "Type a Pokemon name to see where it can be found.",
+      "es": "Escribe el nombre de un Pokémon para ver dónde se puede encontrar."
+    },
+    "nowhere": {
+      "en": "Not found anywhere in the lists (it may come from evolution, breeding or events).",
+      "es": "No aparece en ninguna de las listas (puede venir de una evolución, de la cría o de eventos)."
+    },
+    "starter": {
+      "en": "Starter",
+      "es": "Inicial"
+    },
+    "staticLbl": {
+      "en": "Static or gift",
+      "es": "Estático o regalo"
+    },
+    "egglbl": {
+      "en": "Egg",
+      "es": "Huevo"
+    },
+    "give": {
+      "en": "You receive",
+      "es": "Recibes"
+    },
+    "want": {
+      "en": "You give",
+      "es": "Entregas"
+    },
+    "party": {
+      "en": "Team",
+      "es": "Equipo"
+    },
+    "heldItem": {
+      "en": "Held item",
+      "es": "Objeto equipado"
+    },
+    "shopMain": {
+      "en": "Regular shop",
+      "es": "Tienda normal"
+    },
+    "shopOther": {
+      "en": "Other shop",
+      "es": "Otra tienda"
+    },
+    "noData": {
+      "en": "This game does not provide this information.",
+      "es": "Este juego no ofrece esta información."
+    },
+    "count": {
+      "en": "results",
+      "es": "resultados"
+    },
+    "moreRows": {
+      "en": "more results, narrow the search to see them",
+      "es": "resultados más, afina la búsqueda para verlos"
+    },
+    "evoUnknown": {
+      "en": "Unknown",
+      "es": "Desconocido"
+    },
+    "evoLEVEL": {
+      "en": "Level {x}",
+      "es": "Nivel {x}"
+    },
+    "evoSTONE": {
+      "en": "Use {x}",
+      "es": "Usar {x}"
+    },
+    "evoTRADE": {
+      "en": "Trade",
+      "es": "Intercambio"
+    },
+    "evoTRADE_ITEM": {
+      "en": "Trade holding {x}",
+      "es": "Intercambio con {x} equipado"
+    },
+    "evoHAPPINESS": {
+      "en": "High friendship",
+      "es": "Amistad alta"
+    },
+    "evoHAPPINESS_DAY": {
+      "en": "High friendship (day)",
+      "es": "Amistad alta (de día)"
+    },
+    "evoHAPPINESS_NIGHT": {
+      "en": "High friendship (night)",
+      "es": "Amistad alta (de noche)"
+    },
+    "evoLEVEL_ATTACK_HIGHER": {
+      "en": "Level {x}, Attack higher than Defense",
+      "es": "Nivel {x}, Ataque mayor que Defensa"
+    },
+    "evoLEVEL_DEFENSE_HIGHER": {
+      "en": "Level {x}, Defense higher than Attack",
+      "es": "Nivel {x}, Defensa mayor que Ataque"
+    },
+    "evoLEVEL_ATK_DEF_SAME": {
+      "en": "Level {x}, Attack equal to Defense",
+      "es": "Nivel {x}, Ataque igual a Defensa"
+    },
+    "evoLEVEL_LOW_PV": {
+      "en": "Level {x} (low personality value)",
+      "es": "Nivel {x} (valor de personalidad bajo)"
+    },
+    "evoLEVEL_HIGH_PV": {
+      "en": "Level {x} (high personality value)",
+      "es": "Nivel {x} (valor de personalidad alto)"
+    },
+    "evoLEVEL_CREATE_EXTRA": {
+      "en": "Level {x} (also creates an extra Pokemon)",
+      "es": "Nivel {x} (genera también un Pokémon extra)"
+    },
+    "evoLEVEL_IS_EXTRA": {
+      "en": "Level {x} (the extra Pokemon)",
+      "es": "Nivel {x} (el Pokémon extra)"
+    },
+    "evoHIGH_BEAUTY": {
+      "en": "High beauty",
+      "es": "Belleza alta"
+    },
+    "evoSTONE_MALE_ONLY": {
+      "en": "Use {x} (male only)",
+      "es": "Usar {x} (solo machos)"
+    },
+    "evoSTONE_FEMALE_ONLY": {
+      "en": "Use {x} (female only)",
+      "es": "Usar {x} (solo hembras)"
+    },
+    "evoITEM": {
+      "en": "Use {x}",
+      "es": "Usar {x}"
+    },
+    "evoITEM_DAY": {
+      "en": "Level up holding {x} (day)",
+      "es": "Subir de nivel con {x} equipado (de día)"
+    },
+    "evoITEM_NIGHT": {
+      "en": "Level up holding {x} (night)",
+      "es": "Subir de nivel con {x} equipado (de noche)"
+    },
+    "evoWITH_MOVE": {
+      "en": "Level up knowing {x}",
+      "es": "Subir de nivel conociendo {x}"
+    },
+    "evoWITH_OTHER": {
+      "en": "Level up with {x} in the party",
+      "es": "Subir de nivel con {x} en el equipo"
+    },
+    "evoLEVEL_MALE_ONLY": {
+      "en": "Level {x} (male only)",
+      "es": "Nivel {x} (solo machos)"
+    },
+    "evoLEVEL_FEMALE_ONLY": {
+      "en": "Level {x} (female only)",
+      "es": "Nivel {x} (solo hembras)"
+    },
+    "evoMAGNETIC_FIELD": {
+      "en": "Level up in a magnetic field area",
+      "es": "Subir de nivel en una zona de campo magnético"
+    },
+    "evoMOSS_ROCK": {
+      "en": "Level up near the Moss Rock",
+      "es": "Subir de nivel junto a la Roca Musgosa"
+    },
+    "evoICE_ROCK": {
+      "en": "Level up near the Ice Rock",
+      "es": "Subir de nivel junto a la Roca Helada"
+    },
+    "evoTRADE_SPECIAL": {
+      "en": "Trade for a specific Pokemon",
+      "es": "Intercambio por un Pokémon concreto"
+    },
+    "evoFAIRY_AFFECTION": {
+      "en": "Level up with affection and a Fairy-type move",
+      "es": "Subir de nivel con cariño y un movimiento de tipo Hada"
+    },
+    "evoLEVEL_WITH_DARK": {
+      "en": "Level {x} with a Dark-type in the party",
+      "es": "Nivel {x} con un Pokémon de tipo Siniestro en el equipo"
+    },
+    "evoLEVEL_UPSIDE_DOWN": {
+      "en": "Level {x} with the console held upside down",
+      "es": "Nivel {x} con la consola boca abajo"
+    },
+    "evoLEVEL_RAIN": {
+      "en": "Level {x} while it rains",
+      "es": "Nivel {x} mientras llueve"
+    },
+    "evoLEVEL_DAY": {
+      "en": "Level {x} (day)",
+      "es": "Nivel {x} (de día)"
+    },
+    "evoLEVEL_NIGHT": {
+      "en": "Level {x} (night)",
+      "es": "Nivel {x} (de noche)"
+    },
+    "evoLEVEL_DUSK": {
+      "en": "Level {x} (dusk)",
+      "es": "Nivel {x} (al atardecer)"
+    },
+    "evoLEVEL_GAME_THIS": {
+      "en": "Level {x} (in this game)",
+      "es": "Nivel {x} (en este juego)"
+    },
+    "evoLEVEL_GAME_OTHER": {
+      "en": "Level {x} (in the other game)",
+      "es": "Nivel {x} (en el otro juego)"
+    },
+    "evoLEVEL_GAME_THIS_DAY": {
+      "en": "Level {x} (in this game, day)",
+      "es": "Nivel {x} (en este juego, de día)"
+    },
+    "evoLEVEL_GAME_THIS_NIGHT": {
+      "en": "Level {x} (in this game, night)",
+      "es": "Nivel {x} (en este juego, de noche)"
+    },
+    "evoLEVEL_GAME_OTHER_DAY": {
+      "en": "Level {x} (in the other game, day)",
+      "es": "Nivel {x} (en el otro juego, de día)"
+    },
+    "evoLEVEL_GAME_OTHER_NIGHT": {
+      "en": "Level {x} (in the other game, night)",
+      "es": "Nivel {x} (en el otro juego, de noche)"
+    },
+    "evoSNOWY": {
+      "en": "Level up in a snowy area",
+      "es": "Subir de nivel en una zona nevada"
+    },
+    "evoLEVEL_ULTRA": {
+      "en": "Level {x} (in Ultra Space)",
+      "es": "Nivel {x} (en el Ultraespacio)"
+    },
+    "evoSTONE_ULTRA": {
+      "en": "Use {x} (in Ultra Space)",
+      "es": "Usar {x} (en el Ultraespacio)"
+    },
+    "evoNONE": {
+      "en": "No method",
+      "es": "Sin método"
+    },
+    "typeNORMAL": {
+      "en": "Normal",
+      "es": "Normal"
+    },
+    "typeFIRE": {
+      "en": "Fire",
+      "es": "Fuego"
+    },
+    "typeWATER": {
+      "en": "Water",
+      "es": "Agua"
+    },
+    "typeELECTRIC": {
+      "en": "Electric",
+      "es": "Eléctrico"
+    },
+    "typeGRASS": {
+      "en": "Grass",
+      "es": "Planta"
+    },
+    "typeICE": {
+      "en": "Ice",
+      "es": "Hielo"
+    },
+    "typeFIGHTING": {
+      "en": "Fighting",
+      "es": "Lucha"
+    },
+    "typePOISON": {
+      "en": "Poison",
+      "es": "Veneno"
+    },
+    "typeGROUND": {
+      "en": "Ground",
+      "es": "Tierra"
+    },
+    "typeFLYING": {
+      "en": "Flying",
+      "es": "Volador"
+    },
+    "typePSYCHIC": {
+      "en": "Psychic",
+      "es": "Psíquico"
+    },
+    "typeBUG": {
+      "en": "Bug",
+      "es": "Bicho"
+    },
+    "typeROCK": {
+      "en": "Rock",
+      "es": "Roca"
+    },
+    "typeGHOST": {
+      "en": "Ghost",
+      "es": "Fantasma"
+    },
+    "typeDRAGON": {
+      "en": "Dragon",
+      "es": "Dragón"
+    },
+    "typeDARK": {
+      "en": "Dark",
+      "es": "Siniestro"
+    },
+    "typeSTEEL": {
+      "en": "Steel",
+      "es": "Acero"
+    },
+    "typeFAIRY": {
+      "en": "Fairy",
+      "es": "Hada"
+    },
+    "typeMYSTERY": {
+      "en": "???",
+      "es": "???"
+    },
+    "catPHYSICAL": {
+      "en": "Physical",
+      "es": "Físico"
+    },
+    "catSPECIAL": {
+      "en": "Special",
+      "es": "Especial"
+    },
+    "catSTATUS": {
+      "en": "Status",
+      "es": "Estado"
+    },
+    "tagGym": {
+      "en": "Gym {x}",
+      "es": "Gimnasio {x}"
+    },
+    "tagGymLeader": {
+      "en": "Gym {x} leader",
+      "es": "Líder del gimnasio {x}"
+    },
+    "tagElite": {
+      "en": "Elite Four {x}",
+      "es": "Alto Mando {x}"
+    },
+    "tagChampion": {
+      "en": "Champion",
+      "es": "Campeón"
+    },
+    "tagRival": {
+      "en": "Rival {x}",
+      "es": "Rival {x}"
+    },
+    "tagThemed": {
+      "en": "Special trainer: {x}",
+      "es": "Entrenador especial: {x}"
+    },
+    "tagUber": {
+      "en": "Special battle",
+      "es": "Combate especial"
+    },
+    "footer": {
+      "en": "Pokemon Randomizer YAO. Pokemon, move, ability, item and place names follow the language you pick; trainer names come from your game. Pokemon belongs to Nintendo, Game Freak and Creatures.",
+      "es": "Pokémon Randomizer YAO. Los nombres de Pokémon, movimientos, habilidades, objetos y lugares siguen el idioma que elijas; los nombres de entrenadores vienen de tu juego. Pokémon pertenece a Nintendo, Game Freak y Creatures."
+    },
+    "skipLink": {
+      "en": "Skip to the content",
+      "es": "Saltar al contenido"
+    },
+    "spoilersLabel": {
+      "en": "Spoiler-safe",
+      "es": "Sin spoilers"
+    },
+    "langLabel": {
+      "en": "Language",
+      "es": "Idioma"
+    },
+    "sectionsLabel": {
+      "en": "Sections",
+      "es": "Secciones"
+    },
+    "tabLog": {
+      "en": "Randomization log",
+      "es": "Registro de la aleatorización"
+    },
+    "overviewTitle": {
+      "en": "Your randomized game",
+      "es": "Tu juego aleatorizado"
+    },
+    "overviewLead": {
+      "en": "Everything this run changed, compared with the original game. Open a section to see the details; nothing here changes the game.",
+      "es": "Todo lo que ha cambiado esta ejecución respecto al juego original. Abre una sección para ver los detalles; nada de esto modifica el juego."
+    },
+    "summaryTitle": {
+      "en": "What changed",
+      "es": "Qué ha cambiado"
+    },
+    "aspStats": {
+      "en": "Base stats",
+      "es": "Estadísticas base"
+    },
+    "aspTypes": {
+      "en": "Types",
+      "es": "Tipos"
+    },
+    "aspAbilities": {
+      "en": "Abilities",
+      "es": "Habilidades"
+    },
+    "aspEvolutions": {
+      "en": "Evolutions",
+      "es": "Evoluciones"
+    },
+    "aspLearnsets": {
+      "en": "Level-up and egg moves",
+      "es": "Movimientos por nivel y huevo"
+    },
+    "aspCompat": {
+      "en": "TM, HM and tutor compatibility",
+      "es": "Compatibilidad con MT, MO y tutores"
+    },
+    "aspMoveData": {
+      "en": "Move data",
+      "es": "Datos de movimientos"
+    },
+    "aspTmList": {
+      "en": "TM, HM and tutor moves",
+      "es": "Movimientos de MT, MO y tutores"
+    },
+    "aspWild": {
+      "en": "Wild areas",
+      "es": "Zonas salvajes"
+    },
+    "aspStatic": {
+      "en": "Static and gift Pokemon",
+      "es": "Pokémon estáticos y regalos"
+    },
+    "aspTrades": {
+      "en": "In-game trades",
+      "es": "Intercambios en el juego"
+    },
+    "aspTrainers": {
+      "en": "Trainer teams",
+      "es": "Equipos de entrenadores"
+    },
+    "aspShops": {
+      "en": "Shops",
+      "es": "Tiendas"
+    },
+    "settingsTitle": {
+      "en": "Options used",
+      "es": "Opciones usadas"
+    },
+    "settingsChanged": {
+      "en": "Options that differ from the defaults",
+      "es": "Opciones distintas de las predeterminadas"
+    },
+    "settingsDefault": {
+      "en": "Every option is at its default.",
+      "es": "Todas las opciones están en su valor predeterminado."
+    },
+    "extrasTitle": {
+      "en": "Extras of Pokemon Randomizer YAO",
+      "es": "Extras de Pokémon Randomizer YAO"
+    },
+    "listsLang": {
+      "en": "The program writes these lists in English.",
+      "es": "El programa escribe estas listas en inglés."
+    },
+    "warningsTitle": {
+      "en": "Warnings and notes",
+      "es": "Avisos y notas"
+    },
+    "noWarnings": {
+      "en": "No warnings. Nothing was skipped.",
+      "es": "Sin avisos. No se omitió nada."
+    },
+    "gameTitle": {
+      "en": "Game and run",
+      "es": "Juego y ejecución"
+    },
+    "version": {
+      "en": "Version",
+      "es": "Versión"
+    },
+    "changedOnly": {
+      "en": "Changed only",
+      "es": "Solo cambiados"
+    },
+    "changedTag": {
+      "en": "Changed",
+      "es": "Cambiado"
+    },
+    "searchPokemon": {
+      "en": "Search by name, number or ability...",
+      "es": "Buscar por nombre, número o habilidad..."
+    },
+    "searchMoves": {
+      "en": "Search moves...",
+      "es": "Buscar movimientos..."
+    },
+    "searchWild": {
+      "en": "Search areas or Pokemon...",
+      "es": "Buscar zonas o Pokémon..."
+    },
+    "searchTrainers": {
+      "en": "Search trainers or Pokemon...",
+      "es": "Buscar entrenadores o Pokémon..."
+    },
+    "noResults": {
+      "en": "No results.",
+      "es": "Sin resultados."
+    },
+    "wasIs": {
+      "en": "Original: {v}",
+      "es": "Antes: {v}"
+    },
+    "hiddenTitle": {
+      "en": "Spoilers hidden",
+      "es": "Spoilers ocultos"
+    },
+    "hiddenHint": {
+      "en": "This section shows how the game was randomized. It only protects you from glancing at the screen.",
+      "es": "Esta sección muestra cómo se ha aleatorizado el juego. Solo te protege de mirar la pantalla sin querer."
+    },
+    "logSearch": {
+      "en": "Search the log...",
+      "es": "Buscar en el registro..."
+    },
+    "logJump": {
+      "en": "Jump to a section",
+      "es": "Ir a una sección"
+    },
+    "logDownload": {
+      "en": "Download the log",
+      "es": "Descargar el registro"
+    },
+    "logShown": {
+      "en": "Showing {n} of {m} lines",
+      "es": "Mostrando {n} de {m} líneas"
+    },
+    "logMore": {
+      "en": "Show more lines",
+      "es": "Mostrar más líneas"
+    },
+    "logEmpty": {
+      "en": "No log was saved for this run.",
+      "es": "No se guardó registro en esta ejecución."
+    },
+    "logNoMatch": {
+      "en": "No line matches.",
+      "es": "Ninguna línea coincide."
+    },
+    "logEnglishOnly": {
+      "en": "The log is written by the program in English.",
+      "es": "El programa escribe el registro en inglés."
+    },
+    "placeUnknown": {
+      "en": "Unnamed area",
+      "es": "Zona sin nombre"
+    },
+    "sortBy": {
+      "en": "Sort by",
+      "es": "Ordenar por"
+    },
+    "sortGame": {
+      "en": "Game order (earliest first)",
+      "es": "Orden del juego (lo primero, antes)"
+    },
+    "sortName": {
+      "en": "Name (A to Z)",
+      "es": "Nombre (de la A a la Z)"
+    },
+    "places": {
+      "en": "places",
+      "es": "lugares"
+    },
+    "wildLegend": {
+      "en": "One row per Pokemon per place. Each tag is one way to meet it: the method, the time of day or season, and its chance. Where the chances of that kind of table are not known for this game, the tag shows how many of its slots it fills. Places are in the game's story order (a best estimate).",
+      "es": "Una fila por Pokémon y lugar. Cada etiqueta es una forma de encontrarlo: el método, la hora del día o la estación, y su probabilidad. Cuando no se conocen las probabilidades de ese tipo de tabla en este juego, la etiqueta indica cuántos de sus huecos ocupa. Los lugares siguen el orden de la historia del juego (una estimación)."
+    },
+    "slotsOf": {
+      "en": "{n} of {m} slots",
+      "es": "{n} de {m} huecos"
+    },
+    "inMaps": {
+      "en": "in {n} maps of this place",
+      "es": "en {n} mapas de este lugar"
+    },
+    "postGame": {
+      "en": "Post-game",
+      "es": "Tras el juego principal"
+    },
+    "newHere": {
+      "en": "New",
+      "es": "Nuevo"
+    },
+    "wasHere": {
+      "en": "Originally here",
+      "es": "Antes estaban aquí"
+    },
+    "gameOrder": {
+      "en": "Game order",
+      "es": "Orden en el juego"
+    },
+    "ways": {
+      "en": "Where and how",
+      "es": "Dónde y cómo"
+    },
+    "showMore": {
+      "en": "Show more",
+      "es": "Mostrar más"
+    },
+    "locNone": {
+      "en": "Location not available",
+      "es": "Lugar no disponible"
+    },
+    "kind": {
+      "en": "Kind",
+      "es": "Tipo"
+    },
+    "where2": {
+      "en": "Location",
+      "es": "Lugar"
+    },
+    "staticNote": {
+      "en": "No game stores where these Pokemon are given or met, so their location is not shown. They are ordered by their level in the original game, which follows the story closely but not exactly. The Pokemon column shows what is there now, with the original crossed out.",
+      "es": "Ningún juego guarda dónde se reciben o se encuentran estos Pokémon, así que no se muestra su lugar. Están ordenados por su nivel en el juego original, que sigue la historia de cerca pero no con exactitud. La columna de Pokémon muestra lo que hay ahora, con el original tachado."
+    },
+    "tradeNote": {
+      "en": "No game stores where each trade happens, so the location is not shown, and the trades are listed in the order the game stores them. \"You give\" is what the other trainer asks for; \"You receive\" is what you get.",
+      "es": "Ningún juego guarda dónde ocurre cada intercambio, así que no se muestra el lugar, y los intercambios aparecen en el orden en que el juego los guarda. \"Entregas\" es lo que pide el otro entrenador; \"Recibes\" es lo que obtienes."
+    },
+    "tradeWho": {
+      "en": "Original trainer",
+      "es": "Entrenador original"
+    },
+    "anything": {
+      "en": "Any Pokemon",
+      "es": "Cualquier Pokémon"
+    },
+    "tradeLine": {
+      "en": "Trade: you give {give}, you receive {get}",
+      "es": "Intercambio: entregas {give}, recibes {get}"
+    },
+    "bossesOnly": {
+      "en": "Bosses only",
+      "es": "Solo jefes"
+    },
+    "trainerNote": {
+      "en": "Trainers are in game order, estimated from the levels of their teams in the original game, with gym leaders and the league in their real order. Trainer names and classes come from the game and stay in its language.",
+      "es": "Los entrenadores siguen el orden del juego, estimado a partir de los niveles de sus equipos en el juego original, con los líderes de gimnasio y la liga en su orden real. Los nombres y las clases de los entrenadores vienen del juego y se quedan en su idioma."
+    },
+    "shopNote": {
+      "en": "Shops are in game order: shops that grow with your badges first, then shops named after a town in the order of the story, then the rest in the order the game stores them.",
+      "es": "Las tiendas siguen el orden del juego: primero las que crecen con tus medallas, después las que llevan el nombre de un pueblo en el orden de la historia y por último el resto, en el orden en que el juego las guarda."
+    },
+    "m_grass": {
+      "en": "Grass/Cave",
+      "es": "Hierba/Cueva"
+    },
+    "m_doubles": {
+      "en": "Doubles grass",
+      "es": "Hierba doble"
+    },
+    "m_shaking": {
+      "en": "Shaking grass",
+      "es": "Hierba agitada"
+    },
+    "m_special4": {
+      "en": "Swarms, Poke Radar, GBA slots",
+      "es": "Enjambres, Poké Radar y GBA"
+    },
+    "m_swarm": {
+      "en": "Swarms",
+      "es": "Enjambres"
+    },
+    "m_radio": {
+      "en": "Hoenn/Sinnoh sound",
+      "es": "Sonido de Hoenn/Sinnoh"
+    },
+    "m_dexnav": {
+      "en": "DexNav foreign encounter",
+      "es": "Encuentro extranjero de DexNav"
+    },
+    "m_horde1": {
+      "en": "Common horde",
+      "es": "Horda común"
+    },
+    "m_horde2": {
+      "en": "Uncommon horde",
+      "es": "Horda poco común"
+    },
+    "m_horde3": {
+      "en": "Rare horde",
+      "es": "Horda rara"
+    },
+    "m_flowery": {
+      "en": "Flowers",
+      "es": "Flores"
+    },
+    "m_rough": {
+      "en": "Rough terrain / tall grass",
+      "es": "Terreno irregular / hierba alta"
+    },
+    "m_surf": {
+      "en": "Surf",
+      "es": "Surf"
+    },
+    "m_surfspots": {
+      "en": "Rippling water",
+      "es": "Agua agitada"
+    },
+    "m_fishing": {
+      "en": "Fishing",
+      "es": "Pesca"
+    },
+    "m_oldrod": {
+      "en": "Old Rod",
+      "es": "Caña Vieja"
+    },
+    "m_goodrod": {
+      "en": "Good Rod",
+      "es": "Caña Buena"
+    },
+    "m_superrod": {
+      "en": "Super Rod",
+      "es": "Supercaña"
+    },
+    "m_fishspots": {
+      "en": "Fishing spots",
+      "es": "Puntos de pesca"
+    },
+    "m_nightfish": {
+      "en": "Night fishing replacement",
+      "es": "Pesca nocturna (sustituto)"
+    },
+    "m_fishswarm": {
+      "en": "Fishing swarm",
+      "es": "Enjambre de pesca"
+    },
+    "m_fishtime": {
+      "en": "Time-specific fishing",
+      "es": "Pesca según la hora"
+    },
+    "m_rocksmash": {
+      "en": "Rock Smash",
+      "es": "Golpe Roca"
+    },
+    "m_headbutt": {
+      "en": "Headbutt",
+      "es": "Golpe Cabeza"
+    },
+    "m_interact": {
+      "en": "Interaction",
+      "es": "Interacción"
+    },
+    "m_ambush": {
+      "en": "Ambush",
+      "es": "Emboscada"
+    },
+    "m_bcc": {
+      "en": "Bug-Catching Contest",
+      "es": "Concurso de Captura de Bichos"
+    },
+    "m_special": {
+      "en": "Special",
+      "es": "Especial"
+    },
+    "m_other": {
+      "en": "Other",
+      "es": "Otro"
+    },
+    "v_morning": {
+      "en": "Morning",
+      "es": "Mañana"
+    },
+    "v_day": {
+      "en": "Day",
+      "es": "Día"
+    },
+    "v_night": {
+      "en": "Night",
+      "es": "Noche"
+    },
+    "v_tod": {
+      "en": "time-of-day slots",
+      "es": "huecos según la hora"
+    },
+    "v_spring": {
+      "en": "Spring",
+      "es": "Primavera"
+    },
+    "v_summer": {
+      "en": "Summer",
+      "es": "Verano"
+    },
+    "v_autumn": {
+      "en": "Autumn",
+      "es": "Otoño"
+    },
+    "v_winter": {
+      "en": "Winter",
+      "es": "Invierno"
+    },
+    "v_sos": {
+      "en": "SOS calls",
+      "es": "llamadas SOS"
+    },
+    "v_allseasons": {
+      "en": "all seasons",
+      "es": "todas las estaciones"
+    },
+    "v_anytime": {
+      "en": "any time of day",
+      "es": "a cualquier hora"
+    }
+  },
+  "areaTerms": [
+    [
+      "DexNav Foreign Encounter",
+      "Encuentro extranjero de DexNav"
+    ],
+    [
+      "Uncommon Horde",
+      "Horda poco común"
+    ],
+    [
+      "Common Horde",
+      "Horda común"
+    ],
+    [
+      "Rare Horde",
+      "Horda rara"
+    ],
+    [
+      "Long Grass",
+      "Hierba alta"
+    ],
+    [
+      "Swarm/Radar/GBA",
+      "Enjambre/Poké Radar/GBA"
+    ],
+    [
+      "Hoenn/Sinnoh Radio",
+      "Radio de Hoenn/Sinnoh"
+    ],
+    [
+      "Night Fishing Replacement",
+      "Pesca nocturna (sustituto)"
+    ],
+    [
+      "Fishing Swarm",
+      "Enjambre de pesca"
+    ],
+    [
+      "Time-Specific Fishing",
+      "Pesca según la hora"
+    ],
+    [
+      "Super Rod Fishing",
+      "Pesca con Supercaña"
+    ],
+    [
+      "Good Rod Fishing",
+      "Pesca con Caña Buena"
+    ],
+    [
+      "Old Rod Fishing",
+      "Pesca con Caña Vieja"
+    ],
+    [
+      "Super Rod",
+      "Supercaña"
+    ],
+    [
+      "Good Rod",
+      "Caña Buena"
+    ],
+    [
+      "Old Rod",
+      "Caña Vieja"
+    ],
+    [
+      "Bug Catching Contest",
+      "Concurso de Captura de Bichos"
+    ],
+    [
+      "Rock Smash",
+      "Golpe Roca"
+    ],
+    [
+      "Headbutt",
+      "Golpe Cabeza"
+    ],
+    [
+      "Honey Tree Group",
+      "Grupo de árboles con miel"
+    ],
+    [
+      "Feebas Tiles",
+      "Casillas de Feebas"
+    ],
+    [
+      "Rotating Pokemon",
+      "Pokémon rotativos"
+    ],
+    [
+      "Grass/Cave",
+      "Hierba/Cueva"
+    ],
+    [
+      "Surfing",
+      "Surf"
+    ],
+    [
+      "Fishing",
+      "Pesca"
+    ],
+    [
+      "Swarms",
+      "Enjambres"
+    ],
+    [
+      "Swarm",
+      "Enjambre"
+    ],
+    [
+      "Route",
+      "Ruta"
+    ],
+    [
+      "Morning",
+      "Mañana"
+    ],
+    [
+      "Night",
+      "Noche"
+    ],
+    [
+      "Day",
+      "Día"
+    ],
+    [
+      "Spring",
+      "Primavera"
+    ],
+    [
+      "Summer",
+      "Verano"
+    ],
+    [
+      "Autumn",
+      "Otoño"
+    ],
+    [
+      "Winter",
+      "Invierno"
+    ],
+    [
+      "Unknown",
+      "Desconocido"
+    ]
+  ],
+  "shopTerms": [
+    [
+      "(After Pokédex)",
+      "(tras recibir la Pokédex)"
+    ],
+    [
+      "(Before Pokédex)",
+      "(antes de recibir la Pokédex)"
+    ],
+    [
+      "Dept. Store",
+      "Gran almacén"
+    ],
+    [
+      "Primary",
+      "Principal"
+    ],
+    [
+      "Secondary",
+      "Secundaria"
+    ],
+    [
+      "Badges",
+      "medallas"
+    ],
+    [
+      "Badge",
+      "medalla"
+    ],
+    [
+      "Incenses",
+      "Inciensos"
+    ],
+    [
+      "Vitamins",
+      "Vitaminas"
+    ],
+    [
+      "Herbs",
+      "Hierbas"
+    ],
+    [
+      "TMs",
+      "MT"
+    ],
+    [
+      "Left",
+      "izquierda"
+    ],
+    [
+      "Right",
+      "derecha"
+    ]
+  ],
+  "allowSame": [
+    "m_surf",
+    "pp",
+    "statDef",
+    "tabPokemon",
+    "tagRival",
+    "total",
+    "typeMYSTERY",
+    "typeNORMAL"
+  ]
+}

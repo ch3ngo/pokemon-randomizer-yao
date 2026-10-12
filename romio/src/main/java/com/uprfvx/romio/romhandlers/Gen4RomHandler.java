@@ -100,6 +100,18 @@ public class Gen4RomHandler extends AbstractDSRomHandler {
 	private Map<String, Long> actualFileCRC32s;
 	private boolean tmsReusable;
 
+	// Modified from FVX 11/10/2026: cached offset of the TM/HM move data in ARM9, resolved once
+	// by resolveTmHmDataOffset() instead of re-searching for it on every call. The search anchor
+	// (tmDataPrefix) is a short byte pattern that sits right before the TM data table; for HGSS it
+	// is only 4 bytes long (the vanilla TM01/TM02 move ids). Once TM moves are randomized, the
+	// table itself can coincidentally reproduce that exact 4 byte pattern at some other slot pair,
+	// which makes find() report the pattern as "not unique" and getTMMoves()/getHMMoves()/
+	// setTMMoves() return null or silently fail, even though the table's real location never moved.
+	// Resolving the offset once (the first call always happens before any TM write, since
+	// setTMMoves() itself calls getTMMoves() first to capture the old values) avoids ever
+	// re-searching a table that the randomizer has already mutated.
+	private Integer tmHmDataOffset;
+
 	private Gen4RomEntry romEntry;
 
 	@Override
@@ -128,6 +140,7 @@ public class Gen4RomHandler extends AbstractDSRomHandler {
 	@Override
 	protected void loadedROM(String romCode, byte version) {
 		this.romEntry = entryFor(romCode, version);
+		this.tmHmDataOffset = null; // modified from FVX 11/10/2026: see field comment
 		try {
 			msgNarc = readNARC(romEntry.getFile("Text"));
 		} catch (IOException e) {
@@ -3568,21 +3581,80 @@ public class Gen4RomHandler extends AbstractDSRomHandler {
 		// on the Kingdom of DS Hacking Discord server. This improved command allows
 		// a full long for both the Species and the Move ID.
 		// (The Move ID is an extra move the Mystery Egg mon gets. In Vanilla, it is Togepi's Extrasensory.)
-		byte[] ovOverlay = readOverlay(romEntry.getIntValue("FieldOvlNumber"));
-		int offset = romEntry.getIntValue("MysteryEggCommandOffset");
+		// Modified from FVX (10/10/2026): work on a copy and verify the rewritten command before it is
+		// written to the ROM. If verification fails, the vanilla Mystery Egg is left untouched.
+		byte[] ovOverlay = readOverlay(romEntry.getIntValue("FieldOvlNumber")).clone();
+		int commandOffset = romEntry.getIntValue("MysteryEggCommandOffset");
+		int offset = commandOffset;
 
 		if (!isMysteryEggCommandImproved(ovOverlay)) {
 			improveMysteryEggCommand(ovOverlay);
 		}
 		offset += Gen4Constants.mysteryEggCommandLength;
 
-		writeLong(ovOverlay, offset, se.getSpecies().getBaseNumber());
+		int speciesNumber = se.getSpecies().getBaseNumber();
+		writeLong(ovOverlay, offset, speciesNumber);
 		offset += 4;
 
 		Move extraMove = getMysteryEggMove(se.getSpecies().getBaseForme());
-		writeLong(ovOverlay, offset, extraMove == null ? 0 : extraMove.number);
+		int moveNumber = extraMove == null ? 0 : extraMove.number;
+		writeLong(ovOverlay, offset, moveNumber);
+
+		String problem = verifyMysteryEggCommand(ovOverlay, commandOffset, speciesNumber, moveNumber);
+		if (problem != null) {
+			System.err.println("WARNING: Mystery Egg (Violet City) was not randomized for " + romEntry.getName()
+					+ " because the rewritten command failed verification: " + problem
+					+ ". The vanilla Togepi egg was kept.");
+			return;
+		}
 
 		writeOverlay(romEntry.getIntValue("FieldOvlNumber"), ovOverlay);
+	}
+
+	/**
+	 * Static sanity check of the rewritten Mystery Egg command (modified from FVX, 10/10/2026).
+	 * Verifies what can be proven from the bytes alone: that the command carries the improved marker,
+	 * that the species and move ids read back correctly and are in range, and that every Thumb
+	 * PC-relative load in the command reads one of the two new data slots. It cannot detect a fault
+	 * that only shows up at runtime. Returns null if everything checks out, otherwise a description.
+	 */
+	private String verifyMysteryEggCommand(byte[] ovOverlay, int commandOffset, int speciesNumber, int moveNumber) {
+		int commandLength = Gen4Constants.mysteryEggCommandLength;
+		if (commandOffset < 0 || commandOffset + commandLength + 8 > ovOverlay.length) {
+			return "command lies outside the field overlay";
+		}
+		if (!isMysteryEggCommandImproved(ovOverlay)) {
+			return "improved-command marker missing";
+		}
+		if (speciesNumber < 1 || speciesNumber >= pokes.length) {
+			return "species number " + speciesNumber + " out of range";
+		}
+		if (moveNumber < 0 || moveNumber >= moves.length) {
+			return "move number " + moveNumber + " out of range";
+		}
+		int speciesSlot = commandOffset + commandLength;
+		if (readLong(ovOverlay, speciesSlot) != speciesNumber || readLong(ovOverlay, speciesSlot + 4) != moveNumber) {
+			return "species/move slots do not read back correctly";
+		}
+		boolean readsSpecies = false;
+		boolean readsMove = false;
+		for (int i = 0; i + 1 < commandLength; i += 2) {
+			int halfword = (ovOverlay[commandOffset + i] & 0xFF) | ((ovOverlay[commandOffset + i + 1] & 0xFF) << 8);
+			if ((halfword & 0xF800) == 0x4800) { // Thumb LDR Rd, [PC, #imm8 * 4]
+				int target = ((i + 4) & ~3) + (halfword & 0xFF) * 4;
+				if (target == commandLength) {
+					readsSpecies = true;
+				} else if (target == commandLength + 4) {
+					readsMove = true;
+				} else {
+					return "PC-relative load at +" + i + " reads +" + target + ", outside the species/move slots";
+				}
+			}
+		}
+		if (!readsSpecies || !readsMove) {
+			return "command does not load both the species and the move slot";
+		}
+		return null;
 	}
 
 	private void improveMysteryEggCommand(byte[] ovOverlay) {
@@ -3767,17 +3839,27 @@ public class Gen4RomHandler extends AbstractDSRomHandler {
 		}
 	}
 
+	// Modified from FVX 11/10/2026: resolves the TM/HM data offset once and caches it, instead of
+	// re-running find() against the (possibly already randomized) arm9 on every call. See the
+	// tmHmDataOffset field comment for why re-searching is unsafe.
+	private int resolveTmHmDataOffset() {
+		if (tmHmDataOffset == null) {
+			String tmDataPrefix;
+			if (romEntry.getRomType() == Gen4Constants.Type_DP || romEntry.getRomType() == Gen4Constants.Type_Plat) {
+				tmDataPrefix = Gen4Constants.dpptTMDataPrefix;
+			} else {
+				tmDataPrefix = Gen4Constants.hgssTMDataPrefix;
+			}
+			int offset = find(arm9, tmDataPrefix);
+			tmHmDataOffset = offset > 0 ? offset + tmDataPrefix.length() / 2 : -1;
+		}
+		return tmHmDataOffset;
+	}
+
 	@Override
 	public List<Integer> getTMMoves() {
-		String tmDataPrefix;
-		if (romEntry.getRomType() == Gen4Constants.Type_DP || romEntry.getRomType() == Gen4Constants.Type_Plat) {
-			tmDataPrefix = Gen4Constants.dpptTMDataPrefix;
-		} else {
-			tmDataPrefix = Gen4Constants.hgssTMDataPrefix;
-		}
-		int offset = find(arm9, tmDataPrefix);
+		int offset = resolveTmHmDataOffset();
 		if (offset > 0) {
-			offset += tmDataPrefix.length() / 2; // because it was a prefix
 			List<Integer> tms = new ArrayList<>();
 			for (int i = 0; i < Gen4Constants.tmCount; i++) {
 				tms.add(readWord(arm9, offset + i * 2));
@@ -3790,15 +3872,8 @@ public class Gen4RomHandler extends AbstractDSRomHandler {
 
 	@Override
 	public List<Integer> getHMMoves() {
-		String tmDataPrefix;
-		if (romEntry.getRomType() == Gen4Constants.Type_DP || romEntry.getRomType() == Gen4Constants.Type_Plat) {
-			tmDataPrefix = Gen4Constants.dpptTMDataPrefix;
-		} else {
-			tmDataPrefix = Gen4Constants.hgssTMDataPrefix;
-		}
-		int offset = find(arm9, tmDataPrefix);
+		int offset = resolveTmHmDataOffset();
 		if (offset > 0) {
-			offset += tmDataPrefix.length() / 2; // because it was a prefix
 			offset += Gen4Constants.tmCount * 2; // TM data
 			List<Integer> hms = new ArrayList<>();
 			for (int i = 0; i < Gen4Constants.hmCount; i++) {
@@ -3813,15 +3888,8 @@ public class Gen4RomHandler extends AbstractDSRomHandler {
 	@Override
 	public void setTMMoves(List<Integer> moveIndexes) {
 		List<Integer> oldMoveIndexes = this.getTMMoves();
-		String tmDataPrefix;
-		if (romEntry.getRomType() == Gen4Constants.Type_DP || romEntry.getRomType() == Gen4Constants.Type_Plat) {
-			tmDataPrefix = Gen4Constants.dpptTMDataPrefix;
-		} else {
-			tmDataPrefix = Gen4Constants.hgssTMDataPrefix;
-		}
-		int offset = find(arm9, tmDataPrefix);
+		int offset = resolveTmHmDataOffset();
 		if (offset > 0) {
-			offset += tmDataPrefix.length() / 2; // because it was a prefix
 			for (int i = 0; i < Gen4Constants.tmCount; i++) {
 				writeWord(arm9, offset + i * 2, moveIndexes.get(i));
 			}
@@ -5758,6 +5826,43 @@ public class Gen4RomHandler extends AbstractDSRomHandler {
 		}
 	}
 
+	/** Modified from FVX (10/10/2026): Pokemon Centers that skip fainted Pokemon, see {@link DsHealPartyPatch}. */
+	@Override
+	public FeatureAvailability checkCentersSkipFainted() {
+		return DsHealPartyPatch.check(arm9);
+	}
+
+	@Override
+	public PatchResult applyCentersSkipFainted() {
+		return DsHealPartyPatch.apply(arm9);
+	}
+
+	/** Modified from FVX (10/10/2026): adjustable shiny chance, see {@link DsShinyPatch}. */
+	@Override
+	public FeatureAvailability checkShinyChance() {
+		return DsShinyPatch.check(arm9);
+	}
+
+	@Override
+	public PatchResult applyShinyChance(double percent) {
+		return DsShinyPatch.apply(arm9, percent);
+	}
+
+	/** Modified from FVX (10/10/2026): the detail behind {@link #isRomValid}. */
+	@Override
+	public RomIntegrityReport getIntegrityReport() {
+		Map<Integer, Long> expectedOverlays = new HashMap<>();
+		for (int overlayNumber : romEntry.getOverlayExpectedCRC32Keys()) {
+			expectedOverlays.put(overlayNumber, romEntry.getOverlayExpectedCRC32(overlayNumber));
+		}
+		Map<String, Long> expectedFiles = new HashMap<>();
+		for (String fileKey : romEntry.getFileKeys()) {
+			expectedFiles.put(fileKey, romEntry.getFileExpectedCRC32(fileKey));
+		}
+		return RomIntegrityReport.forDSGame(4, romEntry.getArm9ExpectedCRC32(), actualArm9CRC32,
+				expectedOverlays, actualOverlayCRC32s, expectedFiles, actualFileCRC32s);
+	}
+
 	@Override
 	public boolean isRomValid(PrintStream logStream) {
 		if (logStream != null) {
@@ -6123,4 +6228,64 @@ public class Gen4RomHandler extends AbstractDSRomHandler {
 		String romCode = getRomEntry().getRomCode();
 		return romCode.length() >= 4 && romCode.charAt(3) == 'E';
 	}
+
+    /** Modified from FVX (10/10/2026): the player's walking sprites, see {@link com.uprfvx.romio.graphics.ds.DsPlayerSprites}. */
+    @Override
+    public FeatureAvailability checkPlayerSprites() {
+        if (!(romEntry.getRomType() == Gen4Constants.Type_HGSS)) {
+            return FeatureAvailability.no("Replacing the player's sprites is only available for HeartGold, SoulSilver and Black 2 so far.");
+        }
+        try {
+            return com.uprfvx.romio.graphics.ds.DsPlayerSprites.looksRight(readNARC(com.uprfvx.romio.graphics.ds.DsPlayerSprites.HGSS.narcPath()),
+                    com.uprfvx.romio.graphics.ds.DsPlayerSprites.HGSS)
+                    ? FeatureAvailability.yes()
+                    : FeatureAvailability.no("The player's sprites were not found where expected in this game (a modified ROM?).");
+        } catch (java.io.IOException | RuntimeException e) {
+            return FeatureAvailability.no("The player's sprites could not be read: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public java.awt.image.BufferedImage exportPlayerSprites(boolean female) {
+        if (!checkPlayerSprites().available()) {
+            return null;
+        }
+        try {
+            com.uprfvx.romio.graphics.ds.DsPlayerSprites.Location where = com.uprfvx.romio.graphics.ds.DsPlayerSprites.HGSS;
+            return com.uprfvx.romio.graphics.ds.DsPlayerSprites.export(readNARC(where.narcPath()),
+                    female ? where.femaleMember() : where.maleMember());
+        } catch (java.io.IOException | RuntimeException e) {
+            return null;
+        }
+    }
+
+    @Override
+    public PatchResult applyPlayerSprites(java.awt.image.BufferedImage male, java.awt.image.BufferedImage female) {
+        FeatureAvailability available = checkPlayerSprites();
+        if (!available.available()) {
+            return PatchResult.notApplied(available.reason());
+        }
+        try {
+            com.uprfvx.romio.graphics.ds.DsPlayerSprites.Location where = com.uprfvx.romio.graphics.ds.DsPlayerSprites.HGSS;
+            com.uprfvx.romio.newnds.NARCArchive narc = readNARC(where.narcPath());
+            StringBuilder message = new StringBuilder();
+            boolean any = false;
+            if (male != null) {
+                PatchResult r = com.uprfvx.romio.graphics.ds.DsPlayerSprites.apply(narc, where.maleMember(), male, "boy");
+                any |= r.applied();
+                message.append(r.message()).append(' ');
+            }
+            if (female != null) {
+                PatchResult r = com.uprfvx.romio.graphics.ds.DsPlayerSprites.apply(narc, where.femaleMember(), female, "girl");
+                any |= r.applied();
+                message.append(r.message()).append(' ');
+            }
+            if (any) {
+                writeNARC(where.narcPath(), narc);
+            }
+            return any ? PatchResult.applied(message.toString().strip()) : PatchResult.notApplied(message.toString().strip());
+        } catch (java.io.IOException | RuntimeException e) {
+            return PatchResult.notApplied("The player's sprites could not be replaced: " + e.getMessage());
+        }
+    }
 }

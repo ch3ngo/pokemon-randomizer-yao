@@ -50,3 +50,12 @@ manifest.mf
 build_eclipse.xml
 .classpath
 .settings/org.eclipse.jdt.core.prefs
+
+# yao: never commit anything under roms/ except the upstream placeholder
+roms/*
+!roms/readme.txt
+
+# yao: personal sprite collection, never committed (see Phase 5 in the project notes)
+random/src/main/resources/data/custom_player_graphics/local/
+dist/
+/data/
