@@ -692,10 +692,14 @@
      "tooltip": "All randomly-chosen starters will be of the selected type.\n  If set to \"Random\", a single type will be chosen and all randomly-chosen starters will be of that type.\n\n  Warning: This setting may cause the randomization to fail when used with others restricting which Pokemon may be chosen,  due to a lack of Pokemon fulfilling the criteria.\n E.g. choosing \"Random (basic Pokemon with 2 evolutions)\" and \"Fighting\" as the type will cause a failed randomization in\n all generations, as Machop and Timburr are the only basic Fighting Pokemon with 2 evolutions. And earlier generations have the same issues with many other types.\n \"Random (any basic Pokemon)\", \"No Dual Types\", \"No Legandaries\" etc. may also cause failures.\n\n When Pokemon types are not randomized, it is possible for the user to figure out which combination of options may work or not\n (e.g. in Gen 1, there will never be any non-dual type Ghost Pokemon, and Gen 4 is the first generation with 3 basic non-legendary Dragon Pokémon). \n If Pokemon types are randomized, failing is more purely probabilistic. As a rule, later generations have more Pokémon and are thus less likely to fail."
     }
    ],
+   "tooltip": "Rules about the types of the starters. They only apply to starters the program picks at random, so they do nothing while the starters are Unchanged (the whole group is off then), and starters you pick yourself under Custom are never changed. \"None\" means no rule.",
    "label": "Type rules for the starters"
   },
   "startersSingleType": {
-   "label": "Type of the starters"
+   "label": "Type of the starters",
+   "tooltip": "Only used when the type rule above is \"Single type\" (it stays greyed out otherwise).\nPick the type all randomly-chosen starters will have, or \"None (random type)\" to let the program pick one type for the whole trio.",
+   "dependsOn": "startersTypeMod",
+   "dependsOnValue": "SINGLE_TYPE"
   },
   "startersNoDualTypes": {
    "label": "Starters No Dual Types"
@@ -1144,12 +1148,12 @@
      "tooltip": "On each map, each Pokemon will be replaced by exactly one new Pokemon.\nA map is the portion of a single named area that is loaded at one time, such as a route, a single floor of a cave or tower, etc.\nCompare to \"1 Per Location\".\n\nIn some games, there are encounter sets that are shared between multiple maps. These will be considered their own maps, but any that are\n shared between the same set of maps will be grouped into a single pseudo-map."
     },
     {
-     "label": null,
-     "tooltip": null
+     "label": "1 Per Named Location",
+     "tooltip": "Each Pokemon in a given location will be replaced by another Pokemon in every slot it appears in.\n This will make each location have a handful of random Pokemon.\n\n A location is essentially a named place on the town map, e.g. different floors of the same dungeon\n or fishing/surfing on the same route may count as separate maps or encounter sets, but they still fall under the same location.\n Using this option they will be randomized together.\n\n Compare to \"1 Per Encounter Set\" or \"1 Per Map\".\n\n Due to technical limitations, some locations may be unintuitive:\n In Gen 1, the old rod and good rod each constitute their own location.\n In Gen 1, except Yellow, super rod encounters may be shared by multiple routes/towns/dungeons and are categorized into \"groups\" by the game.\n Each of these \"groups\" is counted as a location.\n In Gen 2, fishing and headbutt encounters may be shared by multiple routes/towns/dungeons and are categorized into \"groups\" by the game.\n Each of these \"groups\" is counted as a location."
     },
     {
-     "label": null,
-     "tooltip": null
+     "label": "1 In Whole Game",
+     "tooltip": "Every place a certain Pokemon appears in, it will be replaced by another set Pokemon.\nThis is the default: a vanilla species that shows up on many different routes (which is common) gets the same replacement everywhere, so the same few new species keep reappearing across the game.\nFor a fully independent, unrelated result on every route, pick \"Maximum Possible\" instead."
     }
    ],
    "label": "How wild encounters are shared between areas"

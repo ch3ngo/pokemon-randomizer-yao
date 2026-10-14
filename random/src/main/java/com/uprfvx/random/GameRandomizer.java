@@ -316,6 +316,7 @@ public class GameRandomizer {
 
         maybeRandomizeTrainerHeldItems();
         maybeApplyMegaFinale();
+        maybeApplyTrainerBattleItemRules();
         maybeRandomizeTrainerNames();
 
         // Apply metronome only mode now that trainers have been dealt with
@@ -364,6 +365,11 @@ public class GameRandomizer {
                 }
 
                 @Override
+                public java.util.Collection<com.uprfvx.romio.gamedata.Species> allSpecies() {
+                    return romHandler.getSpeciesSetInclFormes();
+                }
+
+                @Override
                 public com.uprfvx.romio.gamedata.Species species(int number) {
                     return byNumber.get(number);
                 }
@@ -397,10 +403,18 @@ public class GameRandomizer {
 
     private void maybeEditEvolutionLevels() {
         com.uprfvx.random.yao.YaoSettings yao = settings.getYaoSettings();
-        if (yao.getEvolutionEdits().isEmpty() && yao.getEvolutionScalePercent() == 0) {
+        if (yao.getEvolutionEdits().isEmpty() && yao.getEvolutionScalePercent() == 0
+                && !yao.isStoneEvolutionsAlsoLevel()) {
             return;
         }
         try {
+            if (yao.isStoneEvolutionsAlsoLevel()) {
+                // Added (13/10/2026, Phase 19): runs after the evolution randomization, the user's edits and the
+                // "make evolutions easier" steps, and before the level scale so the scale also covers these.
+                int fully = yao.getFullyEvolvedByLevel();
+                int cap = fully > 0 ? fully : settings.isMakeEvolutionsEasier() ? settings.getMakeEvolutionsEasierLvl() : 0;
+                evolutionEditor().addLevelRoutesToStoneEvolutions(cap).forEach(yao::addRunNote);
+            }
             evolutionEditor().applyLevels().forEach(yao::addRunNote);
         } catch (RuntimeException e) {
             yao.addRunNote("Evolution levels could not be adjusted (" + e + ").");
@@ -864,6 +878,25 @@ public class GameRandomizer {
                 || settings.isRandomizeHeldItemsForImportantTrainerPokemon()
                 || settings.isRandomizeHeldItemsForRegularTrainerPokemon()) {
             trainerPokeRandomizer.randomizeTrainerHeldItems();
+        }
+    }
+
+    /** Added for YAO (13/10/2026): limits the battle items trainers carry, see {@link com.uprfvx.random.yao.TrainerBattleItemRules}. */
+    private void maybeApplyTrainerBattleItemRules() {
+        com.uprfvx.random.yao.YaoSettings yao = settings.getYaoSettings();
+        if (yao.getTrainerItemMode() != com.uprfvx.random.yao.YaoSettings.TrainerItemMode.TIERED) {
+            return;
+        }
+        if (!romHandler.canChangeTrainerBattleItems()) {
+            return; // Gen 1 and 2 keep the game's own item logic, nothing to note
+        }
+        try {
+            for (String note : com.uprfvx.random.yao.TrainerBattleItemRules.apply(romHandler.getTrainers(),
+                    yao.isRegularTrainersKeepItems(), romHandler.generationOfPokemon(), romHandler.getROMType())) {
+                yao.addRunNote(note);
+            }
+        } catch (RuntimeException e) {
+            yao.addRunNote("Trainer battle item rules could not be applied (" + e + ").");
         }
     }
 

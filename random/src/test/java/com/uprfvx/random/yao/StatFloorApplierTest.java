@@ -117,4 +117,31 @@ public class StatFloorApplierTest {
         assertEquals(0, yao.getBoostFloorBst());
         assertEquals(1, yao.getWarnings().size());
     }
+
+    // Added (13/10/2026): with a percentage, only weak, fully evolved Pokemon (below the floor) are boosted, by that share.
+    @Test
+    public void percentBoostOnlyTouchesWeakFullyEvolvedPokemon() {
+        Species baby = mon(1, "BABY", 40, 40, 40, 40, 40, 40);
+        Species weak = mon(2, "WEAK", 50, 50, 50, 50, 50, 50);
+        Species strong = mon(3, "STRONG", 90, 90, 90, 90, 90, 90);
+        baby.getEvolutionsFrom().add(new Evolution(baby, weak, EvolutionType.LEVEL, 16));
+        YaoSettings yao = new YaoSettings();
+        yao.setBoostFloorBst(450);
+        yao.setBoostPercent(25);
+        StatFloorApplier.apply(List.of(baby, weak, strong), yao);
+        assertEquals(240, baby.getBaseStats().getBST());   // still evolves
+        assertEquals(375, weak.getBaseStats().getBST());   // 300 + 25%, not lifted to 450
+        assertEquals(540, strong.getBaseStats().getBST()); // not weak
+    }
+
+    @Test
+    public void percentBoostSettingIsClampedAndSaved() {
+        YaoSettings yao = new YaoSettings();
+        yao.setBoostPercent(250);
+        assertEquals(100, yao.getBoostPercent());
+        assertFalse(yao.getWarnings().isEmpty());
+        yao.setBoostPercent(30);
+        assertEquals(30, YaoSettings.fromText(yao.toText()).getBoostPercent());
+        assertFalse(yao.isDefault());
+    }
 }

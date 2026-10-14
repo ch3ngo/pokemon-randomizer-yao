@@ -49,6 +49,11 @@ public final class EvolutionEditor {
         boolean itemExists(int id);
 
         boolean moveExists(int id);
+
+        /** Every species including formes, or null when the world cannot list them (then numbers are scanned). */
+        default java.util.Collection<Species> allSpecies() {
+            return null;
+        }
     }
 
     private final World world;
@@ -196,6 +201,115 @@ public final class EvolutionEditor {
         editedPairs.add(pair(from.getNumber(), to.getNumber()));
         editedLevelEvolutions.add(evo);
         editedLevels.add(level);
+    }
+
+    // ---------------------------------------------------------------- stone evolutions also by level
+
+    /**
+     * Added for YAO (13/10/2026, Phase 19). A Pokemon with exactly ONE evolution, reached by a stone, gets a second
+     * evolution into the same Pokemon by plain leveling, keeping the stone. Pokemon with several evolutions
+     * (Eevee, Gloom, Poliwhirl, Tyrogue, Wurmple...) are never touched, and neither is anything the user edited
+     * or removed in the evolution editor (those choices always win).
+     *
+     * <p>Level: the game's own estimate for that evolution ({@link Evolution#getEstimatedEvoLvl()}, worked out from
+     * how similar-sized Pokemon evolve by level, and already lowered by "make evolutions easier" when on). When
+     * there is no estimate, {@code round(BST of the evolved Pokemon / 16)}, so a 500 BST evolution comes at 31.
+     * It is then limited to {@code levelCap} (the "fully evolved by" or "make evolutions easier" level; 75% of it
+     * when the evolved Pokemon evolves further), kept above the level the Pokemon itself evolved at, and kept
+     * within 2 to 100.
+     *
+     * <p>Gen 1 and 2 cannot hold an extra evolution, so nothing is added there. A Pokemon with no free evolution
+     * slot is skipped. Every skip and the total are returned as notes for the log.
+     *
+     * @param levelCap the level every Pokemon is fully evolved by, or 0 for no limit
+     */
+    public List<String> addLevelRoutesToStoneEvolutions(int levelCap) {
+        List<String> notes = new ArrayList<>();
+        int gen = world.generation();
+        if (!EvolutionSupport.canAddOrRemove(gen)) {
+            notes.add("Stone evolutions also by level: this game cannot store a second evolution for a Pokemon; "
+                    + "nothing was added.");
+            return notes;
+        }
+        Set<Integer> touched = new HashSet<>();
+        for (YaoSettings.EvolutionEdit edit : yao.getEvolutionEdits()) {
+            touched.add(edit.fromSpecies());
+        }
+        for (YaoSettings.EvolutionRemoval removal : yao.getEvolutionRemovals()) {
+            touched.add(removal.fromSpecies());
+        }
+        java.util.Collection<Species> all = world.allSpecies();
+        List<Species> candidates = new ArrayList<>();
+        if (all != null) {
+            candidates.addAll(all);
+        } else {
+            for (int number = 1; number <= 2000; number++) {
+                Species sp = world.species(number);
+                if (sp != null) {
+                    candidates.add(sp);
+                }
+            }
+        }
+        int added = 0;
+        List<String> examples = new ArrayList<>();
+        Set<Species> seen = new HashSet<>();
+        for (Species from : candidates) {
+            if (from == null || !seen.add(from) || countReal(from) != 1) {
+                continue;
+            }
+            Evolution stone = null;
+            for (Evolution evo : from.getEvolutionsFrom()) {
+                if (evo.getType() != EvolutionType.NONE) {
+                    stone = evo;
+                }
+            }
+            if (stone == null || !isStone(stone.getType())) {
+                continue;
+            }
+            Species to = stone.getTo();
+            if (touched.contains(from.getNumber()) || editedPairs.contains(pair(from.getNumber(), to.getNumber()))) {
+                notes.add("Stone evolutions also by level: " + from.getFullName() + " was edited by you; left as it is.");
+                continue;
+            }
+            if (!EvolutionSupport.supports(gen, EvolutionType.LEVEL)
+                    || countReal(from) >= EvolutionSupport.maxEvolutions(gen)) {
+                notes.add("Stone evolutions also by level: " + from.getFullName() + " has no free evolution slot; skipped.");
+                continue;
+            }
+            int level = stone.getEstimatedEvoLvl() > 1 ? stone.getEstimatedEvoLvl()
+                    : (int) Math.round(bstOf(to) / 16.0);
+            if (levelCap > 0) {
+                int cap = to.getEvolutionsFrom().stream().anyMatch(e -> e.getType() != EvolutionType.NONE)
+                        ? (int) Math.ceil(0.75 * levelCap) : levelCap;
+                level = Math.min(level, cap);
+            }
+            for (Evolution before : from.getEvolutionsTo()) {
+                if (before.getType().usesLevelThreshold()) {
+                    level = Math.max(level, before.getExtraInfo() + 1);
+                }
+            }
+            level = Math.max(2, Math.min(100, level));
+            Evolution created = new Evolution(from, to, EvolutionType.LEVEL, level);
+            from.getEvolutionsFrom().add(created);
+            to.getEvolutionsTo().add(created);
+            added++;
+            if (examples.size() < 5) {
+                examples.add(from.getFullName() + " to " + to.getFullName() + " at level " + level);
+            }
+        }
+        notes.add("Stone evolutions also by level: " + added + " Pokemon with a single stone evolution can now also "
+                + "evolve by leveling" + (examples.isEmpty() ? "" : " (for example " + String.join(", ", examples) + ")")
+                + ". The stone still works.");
+        return notes;
+    }
+
+    private static int bstOf(Species species) {
+        return species.getBaseStats() == null ? 400 : species.getBST(false);
+    }
+
+    private static boolean isStone(EvolutionType type) {
+        return type == EvolutionType.STONE || type == EvolutionType.STONE_MALE_ONLY
+                || type == EvolutionType.STONE_FEMALE_ONLY;
     }
 
     // ---------------------------------------------------------------- level edits and scale

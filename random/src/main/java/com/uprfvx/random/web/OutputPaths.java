@@ -259,6 +259,32 @@ final class OutputPaths {
         return stripExtension(source.getName()) + " randomized";
     }
 
+    /**
+     * Added for YAO (13/10/2026, web UI feedback): where the log and the guide are written. Used to be
+     * {@code Resolved.companionBase} itself, which for a game file was the output file's full path INCLUDING its
+     * extension, so the log and the guide ended up named exactly like the randomized game, extension and all
+     * ("Omega Ruby randomized.3ds.guide.html"). Named instead from the real game name read off the ROM (for
+     * example "Pokemon Omega Ruby"), next to wherever the result was saved, so the name is the same regardless of
+     * what the user typed as the output name and never carries a game file's extension.
+     *
+     * @param location the resolved destination (a file or, for a 3DS LayeredFS folder, the folder itself)
+     * @param romName  the game's own name ({@code RomHandler.getROMName()}), or blank/null when unknown
+     * @param source   the original game, used only for the fallback name when {@code romName} is unusable
+     */
+    static String companionBase(File location, String romName, File source) {
+        File parent = location.getParentFile();
+        return new File(parent, cleanStem(stripForbidden(romName), source)).getPath();
+    }
+
+    /** Removes characters a file name cannot have (Windows-forbidden ones, plus the path separators). */
+    private static String stripForbidden(String name) {
+        String result = name == null ? "" : name;
+        for (char c : (FORBIDDEN + "/\\").toCharArray()) {
+            result = result.replace(String.valueOf(c), "");
+        }
+        return result;
+    }
+
     /** Same file or folder, ignoring case (Windows and macOS file systems do not tell "A.gba" from "a.gba"). */
     private static boolean sameFile(File a, File b) {
         try {

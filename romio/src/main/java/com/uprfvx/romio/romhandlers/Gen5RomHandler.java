@@ -1218,6 +1218,12 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
                 byte[] trpoke = trpokes.files.get(i);
                 Trainer tr = new Trainer();
                 tr.setIndex(i);
+                // Added for YAO (13/10/2026): the 4 battle item slots.
+                int[] battleItems = new int[4];
+                for (int slot = 0; slot < 4; slot++) {
+                    battleItems[slot] = readWord(trainer, 4 + slot * 2);
+                }
+                tr.setBattleItems(battleItems);
                 boolean readMovesets = (trainer[0] & 1) != 0;
                 boolean readItems = (trainer[0] & 2) != 0;
                 tr.setTrainerclass(trainerClasses.get(trainer[1] & 0xFF));
@@ -1400,6 +1406,12 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
                 Trainer tr = allTrainers.next();
                 // preserve original poketype for held item & moves
                 trainer[0] = (byte) tr.getPoketype();
+                // Added for YAO (13/10/2026): write the 4 battle item slots back.
+                if (tr.getBattleItems() != null) {
+                    for (int slot = 0; slot < 4; slot++) {
+                        writeWord(trainer, 4 + slot * 2, tr.getBattleItems()[slot]);
+                    }
+                }
                 int numPokes = tr.getPokemon().size();
                 trainer[3] = (byte) numPokes;
 
@@ -3988,6 +4000,11 @@ public class Gen5RomHandler extends AbstractDSRomHandler {
     @Override
     public Set<Item> getAllConsumableHeldItems() {
         return itemIdsToSet(Gen5Constants.consumableHeldItems);
+    }
+
+    @Override
+    public boolean canChangeTrainerBattleItems() {
+        return true;
     }
 
     @Override

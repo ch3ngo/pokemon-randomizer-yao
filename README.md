@@ -62,11 +62,15 @@ Everything FVX does is included (randomization of all of the above, HM usability
 | Real shiny chance | 0.1 to 100 percent for wild, static, gift, egg and trainer Pokemon, set inside the game's own shiny check (needs a code patch, so you confirm it first). Not available on FireRed. |
 | Egg box | Up to 90 randomized eggs from an in-game character, filtered by legendary, evolution line length and more. Emerald only for now. |
 | Shops | Add your own items with a price to every regular Poke Mart. Shuffle or randomize the special shops (balls and mail, department store floors, herbs, vitamins and so on). The regular Poke Marts are never randomized, and you can protect chosen items everywhere. |
-| Stat tools | Stat booster, a stat floor, and a per-Pokemon stat editor (scale or set exact base stats). |
+| Stat tools | Automatic stat boost for weak, fully evolved Pokemon (raise them to a minimum total, or boost them by a percentage, with a live preview), and a per-Pokemon stat editor (scale or set exact base stats). |
+| Stone evolutions by level | One switch: Pokemon with a single stone evolution can also evolve by leveling. Pokemon with several evolutions (Eevee and similar) are left alone. Gen 3 to 7. |
+| Real locations in the guide | Static, gift and trade Pokemon show where they are in the HTML guide and log (partial coverage for Black 2, Gen 6 and Gen 7). |
 | Custom evolutions | Change, add or remove evolutions and lower evolution levels; invalid edits are refused. Gen 1 and 2: level only. |
 | Fully evolved by a level | Pull level-up evolutions earlier so everything is fully evolved by a level you choose. |
 | Mega finale | The last Pokemon of chosen trainers holds a mega stone. Only for games with Mega Evolutions. |
 | Battle style chances | A chosen share of a trainer group fights as double, triple or rotation battles, where the game allows it. |
+| Trainer battle items | The Potions and Full Restores trainers use are limited by tier and stage of the game (ordinary trainers none, gym leaders only the potion that fits, Full Restore only for the Elite Four and bosses at high levels). Gen 3 to 7. |
+| Incremental movesets | "Better movesets" follows a power curve by level and trainer tier: trainers use good moves from the first gym (around 50 to 60 power), Elite Four trainers mostly 65 to 95 power moves with a rare 120 or 150. Physical and special attackers get fitting moves, status moves are allowed everywhere but rare, and a set always has at least two attacking moves. Trainers only, never wild, static, gift or trade Pokemon. |
 | Locke and Soft-locke (**experimental**) | Revive items removed and Pokemon Centers that stop reviving. Pokemon Center part on HeartGold, SoulSilver, Black 2 and White 2 only. |
 | Softlock check | Warns if no Pokemon you can get can learn a field move the game needs early on. |
 | Modified ROM warning | Tells you if a ROM is not an unmodified retail dump (Gen 1 to 5). |

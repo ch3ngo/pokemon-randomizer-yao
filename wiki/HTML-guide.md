@@ -51,7 +51,13 @@ Nothing in a ROM says when the player meets something, so each section estimates
 
 ## Gifts, static Pokemon and trades: location
 
-No handler of the supported games exposes where a static Pokemon, a gift or an in-game trade is. The data carries only the species, the level and the egg flag (and for a trade the requested species, the given species, the nickname and the original trainer name). The guide therefore shows "Location not available" for all of them in every supported game (Generations 1 to 7, English and Spanish), says so in a note above the table, and writes `loc: null` in the data. The Pokemon column still shows the original Pokemon crossed out, which usually tells you which event it is. Adding real locations needs a hand verified table per game. The text log says the same in the static and trade sections.
+No handler of the supported games exposes where a static Pokemon, a gift or an in-game trade is (the data carries only the species, the level and the egg flag, and for a trade the requested species, the given species, the nickname and the original trainer name). The guide and the text log therefore take the place from a table kept by this program, `locations.txt` next to the guide page, with one section per game family (Crystal, FireRed and LeafGreen, Emerald, Diamond and Pearl, Platinum, HeartGold and SoulSilver, Black and White, Black 2 and White 2, X and Y, Omega Ruby and Alpha Sapphire, Sun and Moon, Ultra Sun and Ultra Moon).
+
+- The table is matched against the ORIGINAL game by species and level, never by position, so the Spanish games (whose lists are shorter or ordered differently) match as well as the English ones. The place always describes the original event, whatever Pokemon is there now.
+- Place names come from the guide's own place table (so a place is named the same way here as in the wild tables, in English and Spanish) plus a few extra names kept in the file. Where the Spanish name is not known for sure the English name is kept, rather than inventing one.
+- An entry the table does not have shows a grey general description ("A gift or fixed encounter (place not listed)", "An egg given by someone", "An in-game trade") and is written to the data with `known: false`. The data is `loc: {en, es, known}`.
+- Sources: Serebii's per game pages and the pret decompilation projects. Games without a section (Red, Blue, Yellow, Gold, Silver, Ruby, Sapphire) have no table yet and show the general description.
+- To add or fix a place, edit `locations.txt` (`S` lines for static, gift and egg Pokemon, `T` lines for trades, `P` lines for extra place names). `GuideLocationsTest` checks the file reads cleanly and `GuideLocationsRomRandomizerTest` prints the coverage of every game in `roms/`.
 
 ## Layout notes
 

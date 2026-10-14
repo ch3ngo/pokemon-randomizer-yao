@@ -151,7 +151,18 @@ th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; font-fam
 tr.row:hover td { background: rgba(124, 146, 255, 0.07); }
 tr.detail > td { background: rgba(124, 146, 255, 0.07); padding: 16px 20px; }
 td.changed { background: var(--changed); box-shadow: inset 2px 0 0 var(--changed-line); }
-.was { display: block; color: var(--muted); font-size: .76rem; text-decoration: line-through; opacity: .85; font-weight: 400; }
+/* Reworked (14/10/2026, web UI feedback): "Show original values" toggle reworked from scratch.
+   Previous design: .was was always visible as a small struck-through line, and showorig made it bigger.
+   Problem: the bigger .was (with its ::before label text) widened table columns automatically on toggle.
+   New design:
+   - .was is hidden by default (display:none). No column-layout impact, no visual clutter.
+   - The tooltip on the td still shows the original value at all times.
+   - body.showorig reveals .was as a compact, labelled line that does NOT widen columns:
+     max-width:100%, overflow:hidden, text-overflow:ellipsis keeps it within the existing cell width.
+   - body.showorig also applies a muted tint to changed cells so the accent-colored cell now reads
+     as "this cell was changed" without ambiguity (not "this is the new value" which was confusing). */
+td.changed.orig { background: rgba(143, 152, 194, 0.08); box-shadow: inset 2px 0 0 var(--muted); }
+.was { display: none; }
 .rowbtn { background: none; border: none; padding: 0; font-weight: 650; text-align: left; }
 .rowbtn:hover { color: var(--accent); }
 .tag { display: inline-block; white-space: nowrap; padding: 2px 10px; margin: 3px 6px 3px 0; border-radius: 999px; font-size: .78rem; border: 1px solid var(--line-hi); background: rgba(124, 146, 255, 0.07); }
@@ -214,6 +225,15 @@ td.ways { min-width: 260px; }
 .tablewrap.flat { max-height: none; border-radius: 12px; }
 .gone { margin: 14px 4px 2px; font-size: 13.5px; }
 .was.inline { display: inline; }
+/* "Show original values": reveals the hidden .was elements without moving or resizing columns.
+   max-width:100% + overflow:hidden + text-overflow:ellipsis constrains each .was to the column it
+   is already in, so no column grows. Ghost rows (Pokemon that left a place) also appear. */
+tr.ghost { display: none; }
+body.showorig tr.ghost { display: table-row; opacity: .8; }
+body.showorig tr.ghost td:first-child { text-decoration: line-through; }
+body.showorig .was { display: block; color: var(--muted); font-size: .76rem; font-weight: 400; border-left: 2px solid var(--changed-line); padding-left: 6px; margin-top: 3px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+body.showorig .was::before { content: attr(data-lbl) " "; color: var(--faint); font-weight: 600; }
+body.showorig .was.inline { display: inline; border-left: 0; padding-left: 0; overflow: visible; white-space: normal; }
 ul.finds { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
 ul.finds li { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 12px; align-items: start; }
 ul.finds .ftext { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
@@ -307,7 +327,7 @@ const TYPE_COLORS = { NORMAL:"#a8a77a", FIRE:"#ee8130", WATER:"#6390f0", ELECTRI
 
 /* ---------- state ---------- */
 const META = DATA.meta || {};
-const S = { lang: META.lang === "es" ? "es" : "en", tab: "ov", showOrig: false, changedOnly: false, sort: {}, filter: {}, open: {}, revealed: {}, lim: {},
+const S = { lang: META.lang === "es" ? "es" : "en", tab: "ov", showOrig: false, openD: {}, changedOnly: false, sort: {}, filter: {}, open: {}, revealed: {}, lim: {},
   logStart: 0, logLimit: 1200 };
 try { const l = localStorage.getItem("guideLang"); if (l === "es" || l === "en") S.lang = l; } catch (e) {}
 try { const th = localStorage.getItem("guideTheme"); if (th) document.documentElement.dataset.theme = th; } catch (e) {}
@@ -418,13 +438,15 @@ function placeName(p, nth) {
   return romText(p.name, STR.areaTerms);
 }
 
-/* A changed cell is tinted and shows the original as a small crossed-out line; with "show original values" on, the
-   cell shows the original instead. The original is also in the tooltip. */
+/* A changed cell is tinted and always shows the new value with the original under it as a small crossed-out line.
+   "Show original values" (body.showorig, pure CSS, nothing is redrawn) only makes that original line bigger and
+   labelled, so it never swaps, collapses or reorders anything. The original is also in the tooltip.
+   Modified for YAO (13/10/2026): the toggle used to replace the cell's content and redraw the whole view. */
 function cell(now, was, cls = "", plainWas, display) {
   const changed = !same(now, was);
-  const shown = S.showOrig && changed ? was : (display ?? now);
+  const shown = display ?? now;
   const tip = changed ? ` title="${esc(t("wasIs", { v: plainWas ?? String(was).replace(/<[^>]*>/g, "") }))}"` : "";
-  return `<td class="${cls}${changed ? " changed" : ""}"${tip}>${shown}${!S.showOrig && changed ? `<span class="was">${was}</span>` : ""}</td>`;
+  return `<td class="${cls}${changed ? " changed" : ""}"${tip}>${shown}${changed ? `<span class="was" data-lbl="${esc(t("origShort"))}">${was}</span>` : ""}</td>`;
 }
 function spoiler(inner) {
   return `<div class="spoiler${S.revealed[S.tab] ? " revealed" : ""}"><div class="inner">${inner}</div><div class="veil"><div class="box"><b>${esc(t("hiddenTitle"))}</b><p>${esc(t("hiddenHint"))}</p><button class="btn" type="button" data-reveal>${esc(t("reveal"))}</button></div></div></div>`;
@@ -579,8 +601,8 @@ function pokemonDetail(r, o) {
   const hm = list((r.hm || []).map(n => mvName((R.hms || [])[n - 1])));
   const tut = list((r.tut || []).map(n => mvName((R.tutors || [])[n - 1])));
   const egg = list((r.egg || []).map(m => mvName(m)));
-  return `<div class="grid detailgrid"><div><b>${esc(t("evo"))}</b><div class="dl">${evo}${evoWas && evoWas !== evo ? `<span class="was">${evoWas}</span>` : ""}</div></div>
-    <div><b>${esc(t("learn"))}</b><div class="dl">${learn}${learnWas && learnWas !== learn ? `<span class="was">${learnWas}</span>` : ""}</div></div>
+  return `<div class="grid detailgrid"><div><b>${esc(t("evo"))}</b><div class="dl">${evo}${evoWas && evoWas !== evo ? `<span class="was" data-lbl="${esc(t("origShort"))}">${evoWas}</span>` : ""}</div></div>
+    <div><b>${esc(t("learn"))}</b><div class="dl">${learn}${learnWas && learnWas !== learn ? `<span class="was" data-lbl="${esc(t("origShort"))}">${learnWas}</span>` : ""}</div></div>
     <div><b>${esc(t("tms"))}</b><div class="dl">${tm}</div>${hm ? `<b>${esc(t("hms"))}</b><div class="dl">${hm}</div>` : ""}${tut ? `<b>${esc(t("tut"))}</b><div class="dl">${tut}</div>` : ""}${egg ? `<b>${esc(t("egg"))}</b><div class="dl">${egg}</div>` : ""}</div></div>`;
 }
 
@@ -686,26 +708,29 @@ function renderWild() {
   items.slice(0, limit).forEach(({ p, key, nth }) => {
     const op = wildOrig().get(key);
     const changed = placeChanged(p, op);
-    const shownP = S.showOrig && op ? op : p;
-    const rows = placeRows(shownP);
+    const rows = placeRows(p);
     const origSet = new Set(op ? op.tables.flatMap(tb => tb.mons.map(m => tableKey(tb) + ":" + m[0])) : []);
     const origRow = new Map(op ? placeRows(op).map(r => [r.sp, r]) : []);
     const body = rows.map(r => {
-      const isNew = !S.showOrig && op && !r.tabs.some(({ tb, m }) => origSet.has(tableKey(tb) + ":" + m[0]));
+      const isNew = op && !r.tabs.some(({ tb, m }) => origSet.has(tableKey(tb) + ":" + m[0]));
       const or = origRow.get(r.sp);
-      const lvChanged = !S.showOrig && op && or && (or.lo !== r.lo || or.hi !== r.hi);
-      const sp = S.showOrig ? spName(r.sp, true) : spName(r.sp);
+      const lvChanged = op && or && (or.lo !== r.lo || or.hi !== r.hi);
+      const sp = spName(r.sp);
       return `<tr class="row"><td class="${isNew ? "changed" : ""}">${esc(sp)}${isNew ? ` <span class="pill cyan">${esc(t("newHere"))}</span>` : ""}</td>
-        <td class="num${lvChanged ? " changed" : ""}">${lvText(r.lo, r.hi)}${lvChanged ? `<span class="was">${lvText(or.lo, or.hi)}</span>` : ""}</td><td class="ways"><div class="waylist">${wildChips(r)}</div></td></tr>`;
+        <td class="num${lvChanged ? " changed" : ""}">${lvText(r.lo, r.hi)}${lvChanged ? `<span class="was" data-lbl="${esc(t("origShort"))}">${lvText(or.lo, or.hi)}</span>` : ""}</td><td class="ways"><div class="waylist">${wildChips(r)}</div></td></tr>`;
     }).join("");
     let gone = "";
-    if (!S.showOrig && op) {
+    let ghosts = "";
+    if (op) {
       const nowSet = new Set(rows.map(r => r.sp));
-      const lost = placeRows(op).filter(r => !nowSet.has(r.sp)).map(r => spName(r.sp, true));
+      const lostRows = placeRows(op).filter(r => !nowSet.has(r.sp));
+      const lost = lostRows.map(r => spName(r.sp, true));
+      /* rows for the Pokemon that are no longer here, only visible with "show original values" */
+      ghosts = lostRows.map(r => `<tr class="row ghost"><td>${esc(spName(r.sp, true))} <span class="pill">${esc(t("wasHere"))}</span></td><td class="num">${lvText(r.lo, r.hi)}</td><td class="ways"><div class="waylist">${wildChips(r)}</div></td></tr>`).join("");
       if (lost.length) gone = `<p class="muted gone">${esc(t("wasHere"))}: <span class="was inline">${esc(lost.join(", "))}</span></p>`;
     }
-    html += `<details class="card place" ${q ? "open" : ""}><summary><span class="ord" title="${esc(t("gameOrder"))}">#${p.n}</span><b>${esc(placeName(p, nth))}</b>${p.pg ? `<span class="pill">${esc(t("postGame"))}</span>` : ""}<span class="pill">${rows.length} ${esc(t("tabPokemon"))}</span>${changed ? `<span class="pill cyan">${esc(t("changedTag"))}</span>` : ""}</summary>
-      <div class="tablewrap flat"><table><tr class="hd"><th scope="col">${esc(t("tabPokemon"))}</th><th scope="col" class="num">${esc(t("level"))}</th><th scope="col">${esc(t("ways"))}</th></tr>${body}</table></div>${gone}</details>`;
+    html += `<details class="card place" data-dk="wd:${esc(key)}" ${q ? "open" : ""}><summary><span class="ord" title="${esc(t("gameOrder"))}">#${p.n}</span><b>${esc(placeName(p, nth))}</b>${p.pg ? `<span class="pill">${esc(t("postGame"))}</span>` : ""}<span class="pill">${rows.length} ${esc(t("tabPokemon"))}</span>${changed ? `<span class="pill cyan">${esc(t("changedTag"))}</span>` : ""}</summary>
+      <div class="tablewrap flat"><table><tr class="hd"><th scope="col">${esc(t("tabPokemon"))}</th><th scope="col" class="num">${esc(t("level"))}</th><th scope="col">${esc(t("ways"))}</th></tr>${body}${ghosts}</table></div>${gone}</details>`;
   });
   if (!items.length) html += `<p class="muted">${esc(t("noResults"))}</p>`;
   if (items.length > limit) html += `<p><button class="chip" type="button" data-more="wd">${esc(t("showMore"))} (${num(items.length - limit)})</button></p>`;
@@ -713,6 +738,10 @@ function renderWild() {
 }
 
 /* ---------- where to find a Pokemon ---------- */
+/* where a static, gift or traded Pokemon is: the program's own table (loc = {en, es, known}), or the generic text.
+   Added 13/10/2026; the text of the original game's event is shown, since the species there may have changed. */
+function locText(x) { return x && x.loc ? (x.loc[S.lang] || x.loc.en) : t("locNone"); }
+function locKnown(x) { return !!(x && x.loc && x.loc.known); }
 function buildFindIndex() {
   /* id -> [{ n (game order), kind, text, ways }]; rebuilt on every draw because its labels follow the language */
   const idx = new Map(); const add = (id, e) => { if (!idx.has(id)) idx.set(id, []); idx.get(id).push(e); };
@@ -722,8 +751,8 @@ function buildFindIndex() {
     const nth = p.tag === "UNKNOWN" ? ++unknownN : 0;
     for (const r of placeRows(p)) add(r.sp, { n: p.n, kind: "wild", text: placeName(p, nth), lv: lvText(r.lo, r.hi), ways: wildChips(r), pg: p.pg });
   });
-  (R.statics || []).forEach(s => add(s.species, { n: s.n, kind: "static", text: `${s.egg ? t("egglbl") : t("staticLbl")} (${t("level")}${s.level})`, note: t("locNone") }));
-  (R.trades || []).forEach(tr => add(tr.give, { n: tr.n, kind: "trade", text: t("tradeLine", { give: tr.want ? spName(tr.want) : t("anything"), get: spName(tr.give) }), note: t("locNone") }));
+  (R.statics || []).forEach(s => add(s.species, { n: s.n, kind: "static", text: `${s.egg ? t("egglbl") : t("staticLbl")} (${t("level")}${s.level})`, note: locText(s) }));
+  (R.trades || []).forEach(tr => add(tr.give, { n: tr.n, kind: "trade", text: t("tradeLine", { give: tr.want ? spName(tr.want) : t("anything"), get: spName(tr.give) }), note: locText(tr) }));
   return idx;
 }
 function renderFind() {
@@ -752,7 +781,7 @@ function renderStatics() {
     { id: "sp", label: t("tabPokemon"), val: r => spName(r.species) },
     { id: "lv", label: t("level"), num: true, val: r => r.level },
     { id: "kind", label: t("kind"), val: r => r.egg ? 1 : 0 },
-    { id: "loc", label: t("where2"), val: () => 0 }
+    { id: "loc", label: t("where2"), val: r => locText(r) }
   ];
   if (!S.sort.st) S.sort.st = { col: "n", dir: 1 };
   let rows = R.statics.map((s, i) => ({ ...s, i }));
@@ -761,7 +790,7 @@ function renderStatics() {
   let html = `<div class="bar">${changedChip()}<span class="count">${num(rows.length)} ${esc(t("count"))}</span></div><p class="muted legend">${esc(t("staticNote"))}</p><div class="tablewrap"><table>${head("st", cols)}`;
   rows.forEach(s => {
     const o = (O.statics || [])[s.i] || s;
-    html += `<tr class="row"><td class="num"><span class="ord">#${s.n}</span></td>${cell(esc(spName(s.species)), esc(spName(o.species, true)), "", spName(o.species, true))}${cell(s.level, o.level, "num")}<td>${s.egg ? `<span class="tag">${esc(t("egglbl"))}</span>` : `<span class="tag">${esc(t("staticLbl"))}</span>`}</td><td class="muted">${esc(t("locNone"))}</td></tr>`;
+    html += `<tr class="row"><td class="num"><span class="ord">#${s.n}</span></td>${cell(esc(spName(s.species)), esc(spName(o.species, true)), "", spName(o.species, true))}${cell(s.level, o.level, "num")}<td>${s.egg ? `<span class="tag">${esc(t("egglbl"))}</span>` : `<span class="tag">${esc(t("staticLbl"))}</span>`}</td><td class="${locKnown(s) ? "" : "muted"}">${esc(locText(s))}</td></tr>`;
   });
   return `<div class="view">${spoiler(html + "</table></div>")}</div>`;
 }
@@ -773,7 +802,7 @@ function renderTrades() {
     { id: "want", label: t("want"), val: r => r.want ? spName(r.want) : "" },
     { id: "give", label: t("give"), val: r => spName(r.give) },
     { id: "ot", label: t("tradeWho"), val: r => r.ot || "" },
-    { id: "loc", label: t("where2"), val: () => 0 }
+    { id: "loc", label: t("where2"), val: r => locText(r) }
   ];
   if (!S.sort.tr) S.sort.tr = { col: "n", dir: 1 };
   let rows = R.trades.map((tr, i) => ({ ...tr, i }));
@@ -784,7 +813,7 @@ function renderTrades() {
     const o = (O.trades || [])[tr.i] || tr;
     html += `<tr class="row"><td class="num"><span class="ord">#${tr.n}</span></td>${cell(tr.want ? esc(spName(tr.want)) : esc(t("anything")), o.want ? esc(spName(o.want, true)) : esc(t("anything")), "", o.want ? spName(o.want, true) : t("anything"))}
       ${cell(esc(spName(tr.give)) + (tr.nick ? ` <span class="faint">"${esc(tr.nick)}"</span>` : ""), esc(spName(o.give, true)), "", spName(o.give, true))}
-      <td>${esc(tr.ot || "")}</td><td class="muted">${esc(t("locNone"))}</td></tr>`;
+      <td>${esc(tr.ot || "")}</td><td class="${locKnown(tr) ? "" : "muted"}">${esc(locText(tr))}</td></tr>`;
   });
   return `<div class="view">${spoiler(html + "</table></div>")}</div>`;
 }
@@ -816,7 +845,7 @@ function renderTrainers() {
       return `<tr class="row">${cell(esc(spName(p.species)), esc(spName(op.species, true)), "", spName(op.species, true))}${cell(p.level, op.level, "num")}
         <td>${(p.moves || []).filter(Boolean).map(m => `<span class="mv">${esc(mvName(m))}</span>`).join(" ")}</td><td>${esc(itName(p.item))}</td></tr>`;
     }).join("");
-    html += `<details class="card place" ${q ? "open" : ""}><summary><span class="ord" title="${esc(t("gameOrder"))}">#${tr.n}</span>${tr.boss ? "&#9733; " : ""}<b>${esc(cleanName(tr.name))}</b>${tr.tag ? `<span class="pill">${esc(tagName(tr.tag))}</span>` : ""}<span class="pill">${esc(t("level"))}${o.lv}</span>${changed ? `<span class="pill cyan">${esc(t("changedTag"))}</span>` : ""}</summary>
+    html += `<details class="card place" data-dk="tn:${tr.n}" ${q ? "open" : ""}><summary><span class="ord" title="${esc(t("gameOrder"))}">#${tr.n}</span>${tr.boss ? "&#9733; " : ""}<b>${esc(cleanName(tr.name))}</b>${tr.tag ? `<span class="pill">${esc(tagName(tr.tag))}</span>` : ""}<span class="pill">${esc(t("level"))}${o.lv}</span>${changed ? `<span class="pill cyan">${esc(t("changedTag"))}</span>` : ""}</summary>
       <div class="tablewrap flat"><table><tr class="hd"><th scope="col">${esc(t("party"))}</th><th scope="col" class="num">${esc(t("level"))}</th><th scope="col">${esc(t("tabMoves"))}</th><th scope="col">${esc(t("heldItem"))}</th></tr>${rows}</table></div></details>`;
   });
   if (!items.length) html += `<p class="muted">${esc(t("noResults"))}</p>`;
@@ -885,6 +914,7 @@ function paint() {
   document.getElementById("spoilLabel").textContent = t("spoilersLabel");
   const orig = document.getElementById("btnOrig");
   orig.setAttribute("aria-pressed", String(S.showOrig));
+  document.body.classList.toggle("showorig", S.showOrig);
   document.getElementById("origLabel").textContent = t("showOrig");
   document.getElementById("langSeg").setAttribute("aria-label", t("langLabel"));
   document.querySelectorAll("#langSeg button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === S.lang)));
@@ -899,7 +929,11 @@ function paint() {
   const pos = active ? document.activeElement.selectionStart : 0;
   const view = document.getElementById("view");
   const keepScroll = view.querySelector(".tablewrap") ? view.querySelector(".tablewrap").scrollTop : 0;
+  const keepY = window.scrollY;
   view.innerHTML = RENDER[S.tab]();
+  /* a redraw (filter, language, "changed only"...) must not close the places the reader opened or move the page */
+  view.querySelectorAll("details[data-dk]").forEach(d => { if (S.openD[d.dataset.dk]) d.open = true; });
+  if (keepY && window.scrollY !== keepY) window.scrollTo({ top: keepY });
   const wrap = view.querySelector(".tablewrap"); if (wrap && keepScroll) wrap.scrollTop = keepScroll;
   document.getElementById("foot").textContent = t("footer");
   if (active) { const el = document.querySelector(`[data-filter="${active}"]`); if (el) { el.focus(); try { el.setSelectionRange(pos, pos); } catch (e) {} } }
@@ -915,7 +949,7 @@ document.addEventListener("click", ev => {
   if (el.id === "btnBosses") { S.filter.tnBoss = !S.filter.tnBoss; paint(); return; }
   if (el.dataset.open) { S.open[el.dataset.open] = !S.open[el.dataset.open]; paint(); return; }
   if (el.id === "btnSpoil") { document.body.classList.toggle("hide"); paint(); return; }
-  if (el.id === "btnOrig") { S.showOrig = !S.showOrig; paint(); return; }
+  if (el.id === "btnOrig") { S.showOrig = !S.showOrig; document.body.classList.toggle("showorig", S.showOrig); el.setAttribute("aria-pressed", String(S.showOrig)); return; }
   if (el.id === "btnChanged") { S.changedOnly = !S.changedOnly; paint(); return; }
   if (el.dataset.lang) { S.lang = el.dataset.lang; try { localStorage.setItem("guideLang", S.lang); } catch (e) {} paint(); return; }
   if (el.id === "btnLogMore") { S.logLimit += 1500; paint(); return; }
@@ -929,6 +963,9 @@ document.addEventListener("click", ev => {
     document.documentElement.dataset.theme = next; try { localStorage.setItem("guideTheme", next); } catch (e) {} return;
   }
 });
+document.addEventListener("toggle", ev => {
+  const d = ev.target; if (d && d.tagName === "DETAILS" && d.dataset.dk) { if (d.open) S.openD[d.dataset.dk] = true; else delete S.openD[d.dataset.dk]; }
+}, true);
 document.addEventListener("input", ev => {
   const k = ev.target.dataset && ev.target.dataset.filter; if (!k) return;
   S.filter[k] = ev.target.value; if (k === "lg") { S.logLimit = 1200; S.logStart = 0; } paint();

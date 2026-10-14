@@ -85,6 +85,15 @@ public final class EditArguments {
         }
     }
 
+    public static void applyPercent(YaoSettings yao, String argument) {
+        Integer percent = argument == null ? null : parseInt(argument);
+        if (percent == null) {
+            yao.addWarning("--boost-percent \"" + argument + "\" is not a number; ignored.");
+            return;
+        }
+        yao.setBoostPercent(percent);
+    }
+
     public static void applyFloor(YaoSettings yao, String argument) {
         Integer floor = argument == null ? null : parseInt(argument);
         if (floor == null) {

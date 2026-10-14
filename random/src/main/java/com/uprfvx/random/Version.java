@@ -43,7 +43,9 @@ public class Version {
     // for big/breaking changes.
     public static final Version YAO_1_0_0 = new Version(500, "1.0.0", "YAO");
 
-    public static final Version LATEST = YAO_1_0_0;
+    public static final Version YAO_1_0_1 = new Version(501, "1.0.1", "YAO");
+
+    public static final Version LATEST = YAO_1_0_1;
 
     public final int id;
     public final String name;
@@ -151,7 +153,7 @@ public class Version {
             FVX_1_0_2, FVX_1_0_3, FVX_1_1_0, FVX_1_1_2, FVX_1_1_3, FVX_1_2_0, FVX_1_2_1, FVX_1_2_2, FVX_1_3_0,
             FVX_1_3_1, FVX_1_3_2, FVX_1_3_3, FVX_1_3_4, FVX_1_4_0, FVX_1_4_1, FVX_1_4_2, FVX_1_4_2a, FVX_1_5_0,
             FVX_1_5_1, FVX_1_5_2, FVX_1_5_3, FVX_1_5_4, FVX_1_6_0, FVX_1_6_1, FVX_1_6_2,
-            YAO_1_0_0
+            YAO_1_0_0, YAO_1_0_1
     );
 
     public static boolean isReleaseVersionNewer(String releaseVersion) {

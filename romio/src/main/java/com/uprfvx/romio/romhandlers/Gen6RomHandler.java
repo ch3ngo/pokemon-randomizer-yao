@@ -1901,6 +1901,12 @@ public class Gen6RomHandler extends Abstract3DSRomHandler {
                 boolean readMovesets = (pokeType & 1) != 0;
                 boolean readItems = (pokeType & 2) != 0;
                 tr.setIndex(i);
+                // Added for YAO (13/10/2026): the 4 battle item slots.
+                int[] battleItems = new int[4];
+                for (int slot = 0; slot < 4; slot++) {
+                    battleItems[slot] = readWord(trainer, (isORAS ? 8 : 4) + slot * 2);
+                }
+                tr.setBattleItems(battleItems);
                 int trClassID = isORAS ? readWord(trainer,2) : trainer[1] & 0xFF;
                 tr.setTrainerclass(trainerClasses.get(trClassID));
                 int offset = isORAS ? 6 : 2;
@@ -2046,6 +2052,13 @@ public class Gen6RomHandler extends Abstract3DSRomHandler {
                 }
                 int numPokes = tr.getPokemon().size();
                 trainer[offset+3] = (byte) numPokes;
+                // Added for YAO (13/10/2026): write the 4 battle item slots back.
+                if (tr.getBattleItems() != null) {
+                    for (int slot = 0; slot < 4; slot++) {
+                        writeWord(trainer, (offset + 4) + slot * 2, tr.getBattleItems()[slot]);
+                    }
+                }
+
 
                 if (tr.isForcedDoubleBattle()) {
                     switch (tr.getCurrBattleStyle().getStyle()) {
@@ -4072,6 +4085,11 @@ public class Gen6RomHandler extends Abstract3DSRomHandler {
     @Override
     public Set<Item> getAllConsumableHeldItems() {
         return itemIdsToSet(Gen6Constants.consumableHeldItems);
+    }
+
+    @Override
+    public boolean canChangeTrainerBattleItems() {
+        return true;
     }
 
     @Override

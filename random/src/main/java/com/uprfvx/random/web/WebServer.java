@@ -289,6 +289,48 @@ public final class WebServer {
                 m.put("ok", jobs.cancel(body.string("id", "")));
                 sendJson(ex, 200, m);
             }
+            // Added (13/10/2026, web UI feedback): replaces the guide button. Opens the folder holding the game, the
+            // log and the guide in the OS file manager (the game itself selected when it is a file).
+            // Fixed (14/10/2026): previous logic fell through to java.awt.Desktop.open() or xdg-open for the
+            // folder case on Windows, which could open the wrong location (e.g. the user's home/Documents). On
+            // Windows, explorer.exe is always used: /select,<file> when a file, plain <folder> otherwise.
+            // Also returns the resolved path so the frontend can show it in a toast.
+            case "/api/job/open-folder" -> {
+                Json.Obj body = new Json.Obj(Json.parseObject(readBody(ex)));
+                JobRunner.Job job = jobs.get(body.string("id", ""));
+                File target = job == null || job.output == null ? null : new File(job.output);
+                if (target == null || !target.exists()) {
+                    sendJson(ex, 404, error("The result is not there any more."));
+                    return;
+                }
+                File folder = target.isDirectory() ? target : target.getParentFile();
+                try {
+                    boolean windows = System.getProperty("os.name", "").toLowerCase(java.util.Locale.ROOT).contains("win");
+                    if (windows) {
+                        // Always use explorer.exe on Windows: /select,<file> selects the file in its
+                        // parent folder; plain path opens a folder directly. ProcessBuilder passes each
+                        // list element as one argument so paths with spaces are handled correctly.
+                        if (target.isFile()) {
+                            new ProcessBuilder("explorer.exe", "/select," + target.getAbsolutePath()).start();
+                        } else {
+                            new ProcessBuilder("explorer.exe", folder.getAbsolutePath()).start();
+                        }
+                    } else if (java.awt.Desktop.isDesktopSupported()
+                            && java.awt.Desktop.getDesktop().isSupported(java.awt.Desktop.Action.OPEN)) {
+                        java.awt.Desktop.getDesktop().open(folder);
+                    } else {
+                        new ProcessBuilder("xdg-open", folder.getAbsolutePath()).start();
+                    }
+                } catch (IOException | RuntimeException e) {
+                    sendJson(ex, 500, error("Could not open the folder: " + e.getMessage()
+                            + " Path: " + folder.getAbsolutePath()));
+                    return;
+                }
+                Map<String, Object> m = new LinkedHashMap<>();
+                m.put("ok", true);
+                m.put("path", folder.getAbsolutePath());
+                sendJson(ex, 200, m);
+            }
             case "/api/job/guide" -> {
                 JobRunner.Job job = jobs.get(query.get("id"));
                 File guide = job == null || job.guide == null ? null : new File(job.guide);
@@ -487,7 +529,12 @@ public final class WebServer {
         } catch (IOException | RuntimeException e) {
             return error("The settings could not be saved for the run: " + e);
         }
-        String guide = body.bool("guide", false) ? target.companionBase + ".guide.html" : null;
+        // Modified for YAO (13/10/2026, web UI feedback): named from the real game name instead of
+        // target.companionBase, which for a game file used to be the output file's full path including its
+        // extension (the log and the guide ended up with the exact same name as the randomized game, extension
+        // and all).
+        String companionBase = OutputPaths.companionBase(target.location, session.romName(), rom);
+        String guide = body.bool("guide", false) ? companionBase + "-guide.html" : null;
         boolean log = body.bool("saveLog", true);
         String seed = body.string("seed", "").strip();
         List<String> command = JobRunner.command(rom.getAbsolutePath(), target.cliOutput, settingsFile.getAbsolutePath(), seed,
@@ -495,7 +542,7 @@ public final class WebServer {
         // The command line writes its log next to what it is given; for a LayeredFS folder that is the luma/titles
         // folder, which would end up on the SD card, so the log is moved next to the result when the run is done.
         File cliLog = new File(target.cliOutput + ".log");
-        File finalLog = new File(target.companionBase + ".log");
+        File finalLog = new File(companionBase + ".log");
         JobRunner.Job job = jobs.start(command, new File(RootPath.path), expected, guide, log ? finalLog.getPath() : null,
                 log && !cliLog.equals(finalLog) ? () -> JobRunner.moveFile(cliLog, finalLog) : null);
         List<String> warnings = new ArrayList<>(yao.getWarnings());

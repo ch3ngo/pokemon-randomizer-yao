@@ -194,16 +194,21 @@ final class RomSession {
         features.put("eggBox", availability(rom.checkEggBoxes()));
         features.put("playerSprites", availability(rom.checkPlayerSprites()));
         features.put("shopsResizable", rom.canChangeShopSizes());
-        // Added (12/10/2026): shop randomization never touches the regular shops, so in some games it has nothing to change.
+        // Added (12/10/2026): shop randomization never touches the regular shops, so in some games it has nothing to
+        // change. Broadened (13/10/2026, web UI feedback): a plain TM slot in any shop also counts, since TM slots
+        // are now always randomized too, mirroring ItemRandomizer.hasRandomizableShops.
         boolean shopsRandomizable = false;
         try {
             List<com.uprfvx.romio.gamedata.Shop> shops = rom.hasShopSupport() ? rom.getShops() : null;
-            shopsRandomizable = shops != null && shops.stream().anyMatch(sh -> sh.isSpecialShop());
+            shopsRandomizable = shops != null && shops.stream().anyMatch(sh -> sh.isSpecialShop()
+                    || sh.getItems() != null && sh.getItems().stream().anyMatch(i -> i != null && i.isTM()));
         } catch (RuntimeException e) {
             // leave it false, the notice only informs
         }
         features.put("shopsRandomizable", shopsRandomizable);
         features.put("evolutionEditing", true);
+        // Added (13/10/2026): Gen 3 to 7 read and write the battle items of trainers, Gen 1 and 2 do not.
+        features.put("trainerItems", rom.canChangeTrainerBattleItems());
         features.put("megas", rom.hasMegaEvolutions());
         // Added (12/10/2026): the styles battle style rules can use in this game (none in Gen 1 and 2).
         List<Object> battleStyles = new ArrayList<>();

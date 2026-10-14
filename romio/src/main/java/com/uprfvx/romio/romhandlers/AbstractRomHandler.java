@@ -164,6 +164,11 @@ public abstract class AbstractRomHandler implements RomHandler {
     }
 
     @Override
+    public boolean canChangeTrainerBattleItems() {
+        return false;
+    }
+
+    @Override
     public boolean canAddHeldItemsToBossTrainers() {
         return true;
     }

@@ -1,6 +1,8 @@
 package com.uprfvx.random.randomizers;
 
 import com.uprfvx.random.Settings;
+import com.uprfvx.random.yao.TrainerGroups;
+import com.uprfvx.random.yao.TrainerMoveProgression;
 import com.uprfvx.romio.constants.AbilityIDs;
 import com.uprfvx.romio.constants.GlobalConstants;
 import com.uprfvx.romio.gamedata.*;
@@ -31,6 +33,7 @@ public class TrainerMovesetRandomizer extends Randomizer {
         boolean betterImportantMovesets = settings.isBetterImportantTrainerMovesets();
         boolean betterRegularMovesets = settings.isBetterRegularTrainerMovesets();
 
+        boolean incremental = settings.getYaoSettings().isIncrementalMovesets();
         List<Trainer> trainers = romHandler.getTrainers().stream()
                 .filter(t -> (t.isBoss() && betterBossMovesets) ||
                         (t.isImportant() && betterImportantMovesets) ||
@@ -49,6 +52,15 @@ public class TrainerMovesetRandomizer extends Randomizer {
 
                 if (movesAtLevel.isEmpty()) {
                     continue;
+                }
+
+                // Added for YAO (13/10/2026, web UI feedback item 48): the moves a trainer can get grow with the
+                // level and the trainer's tier, see TrainerMoveProgression.
+                TrainerGroups.Group tier = TrainerGroups.tierOf(t, romHandler.generationOfPokemon(),
+                        romHandler.getROMType());
+                if (incremental) {
+                    movesAtLevel = TrainerMoveProgression.narrow(movesAtLevel, tp.getLevel(), tier,
+                            getAtkSpatkRatio(tp, tp.getSpecies()));
                 }
 
                 double trainerTypeModifier = 1;
@@ -161,6 +173,12 @@ public class TrainerMovesetRandomizer extends Randomizer {
                     }
                 }
 
+                // Modified for YAO (14/10/2026): weight the pool by the power curve of the stage of the game. Done
+                // after every synergy step so STAB, ability and stat biases are multiplied, not replaced.
+                if (incremental) {
+                    movesAtLevel = TrainerMoveProgression.applyWeights(movesAtLevel, tp.getLevel(), tier);
+                }
+
                 // Pick moves
 
                 List<Move> pickedMoves = new ArrayList<>();
@@ -197,6 +215,22 @@ public class TrainerMovesetRandomizer extends Randomizer {
                             }
                             if (!hasRequiredMove) {
                                 movesAtLevel.removeAll(Collections.singletonList(dependentMove));
+                            }
+                        }
+                    }
+
+                    // Added for YAO (14/10/2026): never a set of status moves, so the Pokemon can always hit.
+                    if (incremental) {
+                        long statusPicked = pickedMoves.stream().filter(TrainerMoveProgression::isStatus).count();
+                        long attacksPicked = pickedMoves.size() - statusPicked;
+                        boolean needAttack = statusPicked >= TrainerMoveProgression.MAX_STATUS_MOVES
+                                || (i >= 3 && attacksPicked < TrainerMoveProgression.MIN_ATTACKING_MOVES);
+                        if (needAttack) {
+                            List<Move> attacksOnly = pickFrom.stream()
+                                    .filter(mv -> !TrainerMoveProgression.isStatus(mv))
+                                    .collect(Collectors.toList());
+                            if (!attacksOnly.isEmpty()) {
+                                pickFrom = attacksOnly;
                             }
                         }
                     }

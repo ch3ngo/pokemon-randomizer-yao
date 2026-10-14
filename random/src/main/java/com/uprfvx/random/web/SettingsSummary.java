@@ -161,6 +161,14 @@ public final class SettingsSummary {
                 Json.Obj item = new Json.Obj((Map<String, Object>) s);
                 lines.add("Extra shop item: " + itemName(rom, item.integer("id", 0)) + " for " + item.integer("price", 0));
             }
+            if (!o.bool("incrementalMovesets", true)) {
+                lines.add("Better movesets may use the strongest moves at any level (incremental movesets off)");
+            }
+            if ("unchanged".equals(o.string("trainerItems", "tiered"))) {
+                lines.add("Trainer battle items: the game's own are kept");
+            } else if (o.bool("regularTrainersKeepItems", false)) {
+                lines.add("Trainer battle items: limited by tier and stage, ordinary trainers keep Potion and Super Potion");
+            }
             if (o.bool("keepBasicShopItems", false)) {
                 lines.add("Everyday shop supplies keep their place when shops are randomized");
             }
@@ -173,8 +181,11 @@ public final class SettingsSummary {
                 lines.add("Items kept in place in shops: " + String.join(", ", names));
             }
             int floor = o.integer("boostFloor", 0);
+            int boostPercentSummary = o.integer("boostPercent", 0);
             if (floor > 0) {
-                lines.add("Automatic stat floor: fully evolved Pokemon below a base stat total of " + floor + " are raised to it");
+                lines.add(boostPercentSummary > 0
+                        ? "Automatic stat boost: fully evolved Pokemon below a base stat total of " + floor + " are boosted by " + boostPercentSummary + "%"
+                        : "Automatic stat floor: fully evolved Pokemon below a base stat total of " + floor + " are raised to it");
             }
             for (Object e : o.list("statEdits")) {
                 Json.Obj edit = new Json.Obj((Map<String, Object>) e);
@@ -198,6 +209,9 @@ public final class SettingsSummary {
                 Json.Obj rem = new Json.Obj((Map<String, Object>) e);
                 lines.add("Removed evolution: " + speciesName(rom, rem.integer("from", 0)) + " no longer evolves into "
                         + speciesName(rom, rem.integer("to", 0)));
+            }
+            if (o.bool("stoneEvolutionsAlsoLevel", false)) {
+                lines.add("Stone evolutions can also be reached by leveling (Pokemon with a single evolution)");
             }
             int fully = o.integer("fullyEvolvedByLevel", 0);
             if (fully > 0) {

@@ -36,6 +36,11 @@ final class YaoJson {
             yao.setLockeMode(mode == null ? YaoSettings.LockeMode.NONE : mode);
         }
         yao.setKeepBasicShopItems(in.bool("keepBasicShopItems", false));
+        // Added (13/10/2026): trainer moves and battle items. The defaults are on, so a page that never sends them
+        // gets the incremental movesets and the tiered battle item rules.
+        yao.setIncrementalMovesets(in.bool("incrementalMovesets", true));
+        yao.setTrainerItemMode(in.string("trainerItems", "tiered"));
+        yao.setRegularTrainersKeepItems(in.bool("regularTrainersKeepItems", false));
         for (Object id : in.list("protectedItems")) {
             if (id instanceof Number n) {
                 yao.addProtectedShopItem(n.intValue());
@@ -46,6 +51,9 @@ final class YaoJson {
                 @SuppressWarnings("unchecked") Json.Obj o = new Json.Obj((Map<String, Object>) m);
                 yao.addCustomShopItem(o.integer("id", 0), o.integer("price", 1));
             }
+        }
+        if (in.has("boostPercent")) {
+            yao.setBoostPercent(in.integer("boostPercent", 0));
         }
         if (in.has("boostFloor")) {
             yao.setBoostFloorBst(in.integer("boostFloor", 0));
@@ -105,6 +113,9 @@ final class YaoJson {
                         YaoSettings.parseRuleStyle(o.string("style", "")), o.integer("chance", 0));
             }
         }
+        if (in.has("stoneEvolutionsAlsoLevel")) {
+            yao.setStoneEvolutionsAlsoLevel(in.bool("stoneEvolutionsAlsoLevel", false));
+        }
         if (in.has("fullyEvolvedByLevel")) {
             yao.setFullyEvolvedByLevel(in.integer("fullyEvolvedByLevel", 0));
         }
@@ -133,6 +144,9 @@ final class YaoJson {
         out.put("shinyPercent", yao.getShinyChancePercent());
         out.put("locke", yao.getLockeMode().name().toLowerCase(Locale.ROOT));
         out.put("keepBasicShopItems", yao.isKeepBasicShopItems());
+        out.put("incrementalMovesets", yao.isIncrementalMovesets());
+        out.put("trainerItems", yao.getTrainerItemMode().name().toLowerCase(Locale.ROOT));
+        out.put("regularTrainersKeepItems", yao.isRegularTrainersKeepItems());
         out.put("protectedItems", new ArrayList<>(yao.getProtectedShopItems()));
         List<Object> shop = new ArrayList<>();
         for (YaoSettings.CustomShopItem item : yao.getCustomShopItems()) {
@@ -143,6 +157,7 @@ final class YaoJson {
         }
         out.put("shopItems", shop);
         out.put("boostFloor", yao.getBoostFloorBst());
+        out.put("boostPercent", yao.getBoostPercent());
         List<Object> statEdits = new ArrayList<>();
         for (YaoSettings.StatEdit e : yao.getStatEdits()) {
             Map<String, Object> m = new LinkedHashMap<>();
@@ -203,6 +218,7 @@ final class YaoJson {
         }
         out.put("battleStyleRules", rules);
         out.put("fullyEvolvedByLevel", yao.getFullyEvolvedByLevel());
+        out.put("stoneEvolutionsAlsoLevel", yao.isStoneEvolutionsAlsoLevel());
         Map<String, Object> egg = new LinkedHashMap<>();
         egg.put("count", yao.getEggBoxCount());
         egg.put("legendary", yao.getEggBoxLegendary().name().toLowerCase(Locale.ROOT));

@@ -48,8 +48,9 @@ public final class StatFloorApplier {
     public static List<String> apply(Collection<Species> allSpecies, YaoSettings yao) {
         List<String> notes = new ArrayList<>();
         int floor = yao.getBoostFloorBst();
+        int percent = yao.getBoostPercent();
         if (floor == 0) {
-            return notes;
+            return notes; // the floor is what decides which Pokemon are weak; the percentage only sets how much
         }
 
         int changed = 0;
@@ -75,7 +76,12 @@ public final class StatFloorApplier {
             }
             try {
                 int before = bs.getBST();
-                int target = Math.min(targetBst(before, null, floor), bs.getMaxBST());
+                if (before >= floor) {
+                    continue; // not weak
+                }
+                // Modified for YAO (13/10/2026, user): with a percentage, a weak Pokemon is boosted by that share of
+                // its own total instead of being lifted to the floor.
+                int target = Math.min(percent > 0 ? targetBst(before, percent, 0) : targetBst(before, null, floor), bs.getMaxBST());
                 if (target > before) {
                     bs.setBST(target);
                     int after = bs.getBST();
@@ -93,10 +99,11 @@ public final class StatFloorApplier {
         }
 
         if (changed > 0) {
-            notes.add("Stat floor: " + changed + " Pokemon had their base stat total raised (for example "
+            notes.add("Stat boost: " + changed + " Pokemon had their base stat total raised"
+                    + (percent > 0 ? " (" + percent + "% boost" + (floor > 0 ? ", floor " + floor : "") + ")" : "") + " (for example "
                     + String.join(", ", examples) + ").");
         } else if (notes.isEmpty()) {
-            notes.add("Stat floor: no Pokemon needed a boost.");
+            notes.add("Stat boost: no Pokemon needed a boost.");
         }
         return notes;
     }

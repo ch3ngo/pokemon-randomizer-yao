@@ -88,6 +88,9 @@ public class YaoSettings {
     // ---- Stat floor: raise every fully evolved Pokemon below a base stat total up to it ----
     public static final int MAX_BASE_STAT_TOTAL = 1530; // 255 in each of the six stats
     private int boostFloorBst = 0; // 0 = off
+    // Added for YAO (13/10/2026, user): raise every fully evolved Pokemon's base stat total by this percent. 0 = off.
+    private int boostPercent = 0;
+    public static final int MAX_BOOST_PERCENT = 100;
 
     // ---- Egg boxes: the game hands over a number of randomized eggs ----
     public enum EggLegendary { ANY, NONE, ONLY }
@@ -125,6 +128,18 @@ public class YaoSettings {
     public static final int MIN_FULLY_EVOLVED_LEVEL = 15;
     public static final int MAX_FULLY_EVOLVED_LEVEL = 100;
     private int fullyEvolvedByLevel = 0;
+
+    // ---- Stone evolutions also by level (13/10/2026, Phase 19) ----
+    /** Single-evolution Pokemon that evolve by stone can also evolve by leveling. Off by default. */
+    private boolean stoneEvolutionsAlsoLevel = false;
+
+    public boolean isStoneEvolutionsAlsoLevel() {
+        return stoneEvolutionsAlsoLevel;
+    }
+
+    public void setStoneEvolutionsAlsoLevel(boolean on) {
+        stoneEvolutionsAlsoLevel = on;
+    }
 
     // ---- Custom evolutions ----
     public static final int MAX_EVOLUTION_EDITS = 256;
@@ -356,6 +371,59 @@ public class YaoSettings {
         }
     }
 
+    // ---------------- trainer moves and battle items (added 13/10/2026) ----------------
+
+    /** What "Better movesets" does with the strength of the moves chosen. */
+    private boolean incrementalMovesets = true;
+
+    /** How trainers' battle items (Potion, Full Restore...) are handled. */
+    public enum TrainerItemMode {
+        /** The game's own items are left alone. */
+        UNCHANGED,
+        /** Items are limited by trainer tier and stage of the game, see {@link TrainerBattleItemRules}. */
+        TIERED
+    }
+
+    private TrainerItemMode trainerItemMode = TrainerItemMode.TIERED;
+    private boolean regularTrainersKeepItems = false;
+
+    public boolean isIncrementalMovesets() {
+        return incrementalMovesets;
+    }
+
+    public void setIncrementalMovesets(boolean on) {
+        this.incrementalMovesets = on;
+    }
+
+    public TrainerItemMode getTrainerItemMode() {
+        return trainerItemMode;
+    }
+
+    public void setTrainerItemMode(TrainerItemMode mode) {
+        this.trainerItemMode = mode == null ? TrainerItemMode.TIERED : mode;
+    }
+
+    /** Parses "tiered" or "unchanged"; anything else falls back to tiered with a warning. */
+    public void setTrainerItemMode(String text) {
+        String t = text == null ? "" : text.strip().toLowerCase(java.util.Locale.ROOT);
+        switch (t) {
+            case "unchanged", "off", "none" -> trainerItemMode = TrainerItemMode.UNCHANGED;
+            case "tiered", "on" -> trainerItemMode = TrainerItemMode.TIERED;
+            default -> {
+                warnings.add("Unknown trainer item mode \"" + abbreviate(String.valueOf(text)) + "\"; using the tiered rules.");
+                trainerItemMode = TrainerItemMode.TIERED;
+            }
+        }
+    }
+
+    public boolean isRegularTrainersKeepItems() {
+        return regularTrainersKeepItems;
+    }
+
+    public void setRegularTrainersKeepItems(boolean keep) {
+        this.regularTrainersKeepItems = keep;
+    }
+
     // ---------------- fully evolved by level ----------------
 
     public int getFullyEvolvedByLevel() {
@@ -448,6 +516,19 @@ public class YaoSettings {
             warnings.add("Boost floor " + floor + " is not valid; using " + fixed + " instead.");
         }
         boostFloorBst = fixed;
+    }
+
+    public int getBoostPercent() {
+        return boostPercent;
+    }
+
+    /** Every fully evolved Pokemon gets its base stat total raised by this percent. 0 = off; clamped to 0 to 100. */
+    public void setBoostPercent(int percent) {
+        int fixed = Math.max(0, Math.min(MAX_BOOST_PERCENT, percent));
+        if (fixed != percent) {
+            warnings.add("Boost percent " + percent + " is not valid; using " + fixed + " instead.");
+        }
+        boostPercent = fixed;
     }
 
     // ---------------- per-species stat edits ----------------
@@ -712,10 +793,11 @@ public class YaoSettings {
     public boolean isDefault() {
         return customShopItems.isEmpty() && shinyChancePermille == 0 && lockeMode == LockeMode.NONE
                 && !keepBasicShopItems && protectedShopItems.isEmpty()
-                && boostFloorBst == 0 && eggBoxCount == 0 && !isMegaFinaleOn()
-                && battleStyleRules.isEmpty() && fullyEvolvedByLevel == 0 && playerSpriteMale.isEmpty() && playerSpriteFemale.isEmpty()
+                && boostFloorBst == 0 && boostPercent == 0 && eggBoxCount == 0 && !isMegaFinaleOn()
+                && battleStyleRules.isEmpty() && fullyEvolvedByLevel == 0 && !stoneEvolutionsAlsoLevel && playerSpriteMale.isEmpty() && playerSpriteFemale.isEmpty()
                 && evolutionEdits.isEmpty() && evolutionRemovals.isEmpty() && evolutionScalePercent == 0
-                && statEdits.isEmpty();
+                && statEdits.isEmpty() && incrementalMovesets && trainerItemMode == TrainerItemMode.TIERED
+                && !regularTrainersKeepItems;
     }
 
     public YaoSettings copy() {
@@ -726,6 +808,7 @@ public class YaoSettings {
         copy.keepBasicShopItems = keepBasicShopItems;
         copy.protectedShopItems.addAll(protectedShopItems);
         copy.boostFloorBst = boostFloorBst;
+        copy.boostPercent = boostPercent;
         copy.statEdits.putAll(statEdits);
         copy.eggBoxCount = eggBoxCount;
         copy.megaGymLeaders = megaGymLeaders;
@@ -736,6 +819,10 @@ public class YaoSettings {
         copy.megaFromLevel = megaFromLevel;
         copy.battleStyleRules.addAll(battleStyleRules);
         copy.fullyEvolvedByLevel = fullyEvolvedByLevel;
+        copy.incrementalMovesets = incrementalMovesets;
+        copy.trainerItemMode = trainerItemMode;
+        copy.regularTrainersKeepItems = regularTrainersKeepItems;
+        copy.stoneEvolutionsAlsoLevel = stoneEvolutionsAlsoLevel;
         copy.playerSpriteMale = playerSpriteMale;
         copy.playerSpriteFemale = playerSpriteFemale;
         copy.megaFinaleReplace = megaFinaleReplace;
@@ -758,6 +845,9 @@ public class YaoSettings {
         sb.append("yao.format=").append(FORMAT).append('\n');
         if (boostFloorBst != 0) {
             sb.append("boost.floor=").append(boostFloorBst).append('\n');
+        }
+        if (boostPercent != 0) {
+            sb.append("boost.percent=").append(boostPercent).append('\n');
         }
         if (!playerSpriteMale.isEmpty()) {
             sb.append("sprite.male=").append(playerSpriteMale).append('\n');
@@ -782,6 +872,18 @@ public class YaoSettings {
         for (BattleStyleRule r : battleStyleRules) {
             sb.append("battlerule.").append(br++).append('=').append(r.group().key()).append(':')
                     .append(r.style().name().toLowerCase(java.util.Locale.ROOT)).append(':').append(r.chance()).append('\n');
+        }
+        if (!incrementalMovesets) {
+            sb.append("moves.incremental=0\n");
+        }
+        if (trainerItemMode != TrainerItemMode.TIERED) {
+            sb.append("trainer.items=").append(trainerItemMode.name().toLowerCase(java.util.Locale.ROOT)).append('\n');
+        }
+        if (regularTrainersKeepItems) {
+            sb.append("trainer.items.regular=1\n");
+        }
+        if (stoneEvolutionsAlsoLevel) {
+            sb.append("stonelevel=1\n");
         }
         if (fullyEvolvedByLevel != 0) {
             sb.append("fullyevolved=").append(fullyEvolvedByLevel).append('\n');
@@ -916,6 +1018,8 @@ public class YaoSettings {
                 } else {
                     settings.addBattleStyleRule(group, style, chance);
                 }
+            } else if (key.equals("stonelevel")) {
+                settings.stoneEvolutionsAlsoLevel = value.equals("1") || value.equalsIgnoreCase("true");
             } else if (key.equals("fullyevolved")) {
                 Integer level = parseInt(value);
                 if (level == null) {
@@ -923,6 +1027,12 @@ public class YaoSettings {
                 } else {
                     settings.setFullyEvolvedByLevel(level);
                 }
+            } else if (key.equals("moves.incremental")) {
+                settings.incrementalMovesets = !("0".equals(value.strip()) || "false".equalsIgnoreCase(value.strip()));
+            } else if (key.equals("trainer.items")) {
+                settings.setTrainerItemMode(value);
+            } else if (key.equals("trainer.items.regular")) {
+                settings.regularTrainersKeepItems = "1".equals(value.strip()) || "true".equalsIgnoreCase(value.strip());
             } else if (key.equals("eggbox.count")) {
                 Integer count = parseInt(value);
                 if (count == null) {
@@ -960,6 +1070,13 @@ public class YaoSettings {
                     settings.warnings.add("Unreadable boost floor skipped: \"" + abbreviate(line) + "\".");
                 } else {
                     settings.setBoostFloorBst(floor);
+                }
+            } else if (key.equals("boost.percent")) {
+                Integer percent = parseInt(value);
+                if (percent == null) {
+                    settings.warnings.add("Unreadable boost percent skipped: \"" + abbreviate(line) + "\".");
+                } else {
+                    settings.setBoostPercent(percent);
                 }
             } else if (key.startsWith("statedit.")) {
                 String[] parts = value.split(":");

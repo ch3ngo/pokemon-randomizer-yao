@@ -300,7 +300,8 @@ public final class GuideDataCollector {
 
     /**
      * Static, gift and egg Pokemon. No game handler exposes where an event happens (the encounter data has only the
-     * species, level and flags), so {@code loc} is always null and the page says "location not available".
+     * species, level and flags), so {@code loc} comes from {@link GuideLocations}: {en, es, known} where known is
+     * false for a fallback sentence (modified 13/10/2026, it used to be null for every entry).
      */
     private static List<Object> statics(RomHandler rom) {
         if (!rom.canChangeStaticPokemon()) {
@@ -318,7 +319,56 @@ public final class GuideDataCollector {
         return out;
     }
 
-    /** In-game trades. {@code ot} is the trainer name stored with the traded Pokemon; no handler exposes the place. */
+    /**
+     * Added for YAO (13/10/2026): fills in {@code loc} of the "statics" and "trades" sections of {@code data} (read
+     * from the original game or from the randomized one) with the places of what the ORIGINAL game held at each
+     * position, so a randomized game shows where each event is, not where its new species would be. Done after both
+     * games were read, so it cannot disturb the order in which they are read. A section that cannot be located keeps
+     * {@code loc} null and the page shows its generic text.
+     */
+    @SuppressWarnings("unchecked")
+    public static void applyLocations(Map<String, Object> data, RomHandler original) {
+        applyPlaces(data.get("statics"), placesOf(() -> GuideLocations.get().forStatics(original)));
+        applyPlaces(data.get("trades"), placesOf(() -> GuideLocations.get().forTrades(original)));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void applyPlaces(Object section, List<GuideLocations.Found> places) {
+        if (!(section instanceof List<?> rows) || places == null) {
+            return;
+        }
+        for (int i = 0; i < rows.size() && i < places.size(); i++) {
+            if (rows.get(i) instanceof Map<?, ?> row) {
+                ((Map<String, Object>) row).put("loc", locOf(places, i));
+            }
+        }
+    }
+
+    /** The places for one section, or null when they could not be worked out (the page then shows its generic text). */
+    private static List<GuideLocations.Found> placesOf(Supplier<List<GuideLocations.Found>> supplier) {
+        try {
+            return supplier.get();
+        } catch (RuntimeException e) {
+            return null;
+        }
+    }
+
+    private static Object locOf(List<GuideLocations.Found> places, int index) {
+        if (places == null || index >= places.size()) {
+            return null;
+        }
+        GuideLocations.Found f = places.get(index);
+        Map<String, Object> loc = new LinkedHashMap<>();
+        loc.put("en", f.en);
+        loc.put("es", f.es);
+        loc.put("known", f.known);
+        return loc;
+    }
+
+    /**
+     * In-game trades. {@code ot} is the trainer name stored with the traded Pokemon; no handler exposes the place,
+     * so {@code loc} comes from {@link GuideLocations} like the static Pokemon's (modified 13/10/2026).
+     */
     private static List<Object> trades(RomHandler rom) {
         List<InGameTrade> trades = rom.getInGameTrades();
         if (trades == null) {

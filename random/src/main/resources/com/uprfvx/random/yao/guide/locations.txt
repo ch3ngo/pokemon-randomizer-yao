@@ -1,0 +1,518 @@
+# Where static, gift and in-game trade Pokemon are found (added for YAO, 13/10/2026).
+#
+# No game handler reads this from the ROM: the encounter data holds only species, level and flags, and the trade
+# data holds no map at all. So the places are a maintained table, one section per game family, matched against the
+# ORIGINAL game's own list by species and level (never by position, so the Spanish dumps, whose lists are shorter or
+# ordered differently, still match). Compiled from Serebii's per game pages and the pret decompilation projects.
+#
+# Lines:
+#   @family <key>                      starts a section (crystal frlg emerald dp platinum hgss bw bw2 xy oras sm usum)
+#   P|<TAG>|<english>|<spanish>        a place or phrase the shared place table does not have
+#   S|<species>|<level or *>|<place>   a static, gift or egg Pokemon
+#   T|<wanted>|<given>|<place>         an in-game trade (wanted may be * for "any Pokemon")
+# Species are English names (or #<number> where a name is ambiguous). <place> is free text where {TAG} is replaced
+# by the place's name in the reader's language, from the guide's own place table or a P line above. Text after " || "
+# is the Spanish version of the free text (without it the same text is used, so use only {TAGS} and punctuation).
+# A species listed twice at the same level is matched in order, so repeated encounters can each have a place.
+
+P|GOLDENROD CITY|Goldenrod City|Ciudad Trigal
+P|MAHOGANY TOWN|Mahogany Town|Pueblo Caoba
+P|SAFFRON CITY|Saffron City|Ciudad Azafrán
+P|RUSTBORO CITY|Rustboro City|Ciudad Férrica
+P|FORTREE CITY|Fortree City|Ciudad Arborada
+P|VEILSTONE CITY|Veilstone City|Ciudad Rocavelo
+P|SNOWPOINT CITY|Snowpoint City|Ciudad Puntaneva
+P|OREBURGH CITY|Oreburgh City|Ciudad Pirita
+P|NACRENE CITY|Nacrene City|Ciudad Mayólica
+P|HEARTHOME CITY|Hearthome City|Hearthome City
+P|LAVARIDGE TOWN|Lavaridge Town|Lavaridge Town
+P|MOSSDEEP CITY|Mossdeep City|Ciudad Algaria
+P|TIN TOWER|Tin Tower|Torre Hojalata
+P|TEAM ROCKET BASE|Team Rocket Base|Guarida del Team Rocket
+P|SILPH CO|Silph Co.|Silph S.A.
+P|FIGHTING DOJO|Fighting Dojo|Dojo Karate
+P|CELADON MANSION|Celadon Mansion|Mansión Azulona
+P|GAME CORNER|Game Corner|Casino
+P|NAVEL ROCK|Navel Rock|Navel Rock
+P|BIRTH ISLAND|Birth Island|Isla Nacimiento
+P|FARAWAY ISLAND|Faraway Island|Isla Lejana
+P|SOUTHERN ISLAND|Southern Island|Isla Sur
+P|BATTLE FRONTIER|Battle Frontier|Frente Batalla
+P|WEATHER INSTITUTE|Weather Institute|Instituto Meteorológico
+P|MARINE CAVE|Marine Cave|Marine Cave
+P|TERRA CAVE|Terra Cave|Terra Cave
+P|DESERT TOMB|Desert Tomb|Desert Tomb
+P|ISLAND CAVE|Island Cave|Island Cave
+P|ANCIENT TOMB|Ancient Tomb|Ancient Tomb
+P|EMBEDDED TOWER|Embedded Tower|Embedded Tower
+P|SINJOH RUINS|Sinjoh Ruins|Sinjoh Ruins
+P|SPEAR PILLAR|Spear Pillar|Spear Pillar
+P|HALL OF ORIGIN|Hall of Origin|Hall of Origin
+P|DISTORTION WORLD|Distortion World|Distortion World
+P|FLOWER PARADISE|Flower Paradise|Flower Paradise
+P|NEWMOON ISLAND|Newmoon Island|Newmoon Island
+P|FULLMOON ISLAND|Fullmoon Island|Fullmoon Island
+P|OLD CHATEAU|Old Chateau|Vieja Mansión
+P|ROAM_JOHTO|Roams Johto|Vaga por Johto
+P|ROAM_KANTO|Roams Kanto|Vaga por Kanto
+P|ROAM_HOENN|Roams Hoenn|Vaga por Hoenn
+P|ROAM_SINNOH|Roams Sinnoh|Vaga por Sinnoh
+P|ROAM_UNOVA|Roams Unova|Vaga por Unova
+P|PRIZE|prize|premio
+P|FOSSIL|fossil revival|resurrección de fósil
+P|UNKNOWN DUNGEON|Unknown Dungeon|Unknown Dungeon
+P|AMBRETTE FOSSIL LAB|Ambrette Fossil Laboratory|Laboratorio de fósiles de Ambrette
+P|LUMIOSE CITY|Lumiose City|Ciudad Luminalia
+P|ROYAL AVENUE|Royal Avenue|Avenida Real
+P|KONIKONI CITY|Konikoni City|Konikoni City
+P|SEAFOLK VILLAGE|Seafolk Village|Aldea Marina
+P|TAPU VILLAGE|Tapu Village|Aldea Tapu
+P|RUINS OF CONFLICT|Ruins of Conflict|Ruinas del Conflicto
+P|RUINS OF LIFE|Ruins of Life|Ruinas de la Vida
+P|RUINS OF ABUNDANCE|Ruins of Abundance|Ruinas de la Abundancia
+P|RUINS OF HOPE|Ruins of Hope|Ruinas de la Esperanza
+P|ALTAR|Altar of the Sunne and Moone|Altar del Sol y la Luna
+P|NEW MAUVILLE|New Mauville|Malvalanova
+P|SKY PILLAR|Sky Pillar|Pilar Celeste
+P|ACCUMULA TOWN|Accumula Town|Accumula Town
+P|BLACK CITY|Black City|Ciudad Negra
+P|WHITE FOREST|White Forest|Bosque Blanco
+P|SANTALUNE CITY|Santalune City|Ciudad Novarte
+P|SNOWBELLE CITY|Snowbelle City|Snowbelle City
+P|VANIVILLE TOWN|Vaniville Town|Vaniville Town
+
+# ------------------------------------------------------------------------------------------------ Crystal
+@family crystal
+S|Lapras|20|{UNION CAVE}
+S|Electrode|23|{TEAM ROCKET BASE}, {MAHOGANY TOWN}
+S|Voltorb|23|{TEAM ROCKET BASE}, {MAHOGANY TOWN}
+S|Geodude|21|{TEAM ROCKET BASE}, {MAHOGANY TOWN}
+S|Koffing|21|{TEAM ROCKET BASE}, {MAHOGANY TOWN}
+S|Lugia|60|{WHIRL ISLANDS}
+S|Ho-Oh|60|{TIN TOWER}
+S|Suicune|40|{TIN TOWER}
+S|Raikou|40|{ROAM_JOHTO}
+S|Entei|40|{ROAM_JOHTO}
+S|Gyarados|30|{LAKE OF RAGE}
+S|Sudowoodo|20|{ROUTE 36}
+S|Snorlax|50|{VERMILION CITY}, {DIGLETT'S CAVE}
+S|Shuckle|15|{CIANWOOD CITY}
+S|Tyrogue|10|{MT. MORTAR}
+S|Togepi|*|{VIOLET CITY}
+S|Spearow|10|{ROUTE 35} (Goldenrod gate) || {ROUTE 35} (puerta de Ciudad Trigal)
+S|Eevee|20|Bill's house, {GOLDENROD CITY} || Casa de Bill, {GOLDENROD CITY}
+S|Dratini|15|{DRAGON'S DEN}
+S|Abra|5|{GOLDENROD CITY}, {GAME CORNER} {PRIZE}
+S|Cubone|15|{GOLDENROD CITY}, {GAME CORNER} {PRIZE}
+S|Wobbuffet|15|{GOLDENROD CITY}, {GAME CORNER} {PRIZE}
+S|Pikachu|25|{CELADON CITY}, {GAME CORNER} {PRIZE}
+S|Porygon|15|{CELADON CITY}, {GAME CORNER} {PRIZE}
+S|Larvitar|40|{CELADON CITY}, {GAME CORNER} {PRIZE}
+S|Pichu|*|{ROUTE 34} (Day Care) || {ROUTE 34} (Guardería)
+S|Cleffa|*|{ROUTE 34} (Day Care) || {ROUTE 34} (Guardería)
+S|Igglybuff|*|{ROUTE 34} (Day Care) || {ROUTE 34} (Guardería)
+S|Smoochum|*|{ROUTE 34} (Day Care) || {ROUTE 34} (Guardería)
+S|Magby|*|{ROUTE 34} (Day Care) || {ROUTE 34} (Guardería)
+S|Elekid|*|{ROUTE 34} (Day Care) || {ROUTE 34} (Guardería)
+S|Tyrogue|*|{ROUTE 34} (Day Care) || {ROUTE 34} (Guardería)
+T|Abra|Machop|{GOLDENROD CITY}
+T|Bellsprout|Onix|{VIOLET CITY}
+T|Krabby|Voltorb|{OLIVINE CITY}
+T|Dragonair|Dodrio|{BLACKTHORN CITY}
+T|Haunter|Xatu|{PEWTER CITY}
+T|Chansey|Aerodactyl|{ROUTE 14}
+T|Dugtrio|Magneton|{POWER PLANT}
+
+# ------------------------------------------------------------------------------------------------ FireRed and LeafGreen
+@family frlg
+S|Eevee|25|{CELADON MANSION}, {CELADON CITY}
+S|Hitmonlee|25|{FIGHTING DOJO}, {SAFFRON CITY}
+S|Hitmonchan|25|{FIGHTING DOJO}, {SAFFRON CITY}
+S|Electrode|34|{POWER PLANT}
+S|Zapdos|50|{POWER PLANT}
+S|Articuno|50|{SEAFOAM ISLANDS}
+S|Moltres|50|{MT. EMBER}
+S|Mewtwo|70|{CERULEAN CAVE}
+S|Snorlax|30|{ROUTE 12}
+S|Snorlax|30|{ROUTE 16}
+S|Hypno|30|{BERRY FOREST}
+S|Deoxys|30|{BIRTH ISLAND}
+S|Ho-Oh|70|{NAVEL ROCK}
+S|Lugia|70|{NAVEL ROCK}
+S|Aerodactyl|5|Pokemon Lab, {CINNABAR ISLAND} ({FOSSIL}) || Laboratorio Pokémon, {CINNABAR ISLAND} ({FOSSIL})
+S|Omanyte|5|Pokemon Lab, {CINNABAR ISLAND} ({FOSSIL}) || Laboratorio Pokémon, {CINNABAR ISLAND} ({FOSSIL})
+S|Kabuto|5|Pokemon Lab, {CINNABAR ISLAND} ({FOSSIL}) || Laboratorio Pokémon, {CINNABAR ISLAND} ({FOSSIL})
+S|Lapras|25|{SILPH CO}, {SAFFRON CITY}
+S|Magikarp|5|{ROUTE 4} (Pokemon Center) || {ROUTE 4} (Centro Pokémon)
+S|Abra|9|{CELADON CITY}, {GAME CORNER} {PRIZE}
+S|Clefairy|8|{CELADON CITY}, {GAME CORNER} {PRIZE}
+S|Scyther|25|{CELADON CITY}, {GAME CORNER} {PRIZE}
+S|Dratini|18|{CELADON CITY}, {GAME CORNER} {PRIZE}
+S|Porygon|26|{CELADON CITY}, {GAME CORNER} {PRIZE}
+S|Marowak|30|{POKEMON TOWER}
+S|Raikou|50|{ROAM_KANTO}
+S|Entei|50|{ROAM_KANTO}
+S|Suicune|50|{ROAM_KANTO}
+S|Togepi|*|{WATER LABYRINTH}
+T|Abra|Mr. Mime|{ROUTE 2}
+T|Poliwhirl|Jynx|{CERULEAN CITY}
+T|#29|#32|{ROUTE 5}
+T|#32|#29|{ROUTE 5}
+T|Spearow|Farfetch'd|{VERMILION CITY}
+T|Nidorino|Nidorina|{ROUTE 11}
+T|Golduck|Lickitung|{ROUTE 18}
+T|Slowbro|Lickitung|{ROUTE 18}
+T|Raichu|Electrode|{CINNABAR ISLAND}
+T|Venonat|Tangela|{CINNABAR ISLAND}
+T|Ponyta|Seel|{CINNABAR ISLAND}
+
+# ------------------------------------------------------------------------------------------------ Emerald
+@family emerald
+S|Lileep|20|{RUSTBORO CITY} (Devon Corporation, {FOSSIL}) || {RUSTBORO CITY} (Devon Corporation, {FOSSIL})
+S|Anorith|20|{RUSTBORO CITY} (Devon Corporation, {FOSSIL}) || {RUSTBORO CITY} (Devon Corporation, {FOSSIL})
+S|Kyogre|70|{MARINE CAVE}
+S|Groudon|70|{TERRA CAVE}
+S|Regirock|40|{DESERT TOMB}, {ROUTE 111}
+S|Regice|40|{ISLAND CAVE}, {ROUTE 105}
+S|Registeel|40|{ANCIENT TOMB}, {ROUTE 120}
+S|Rayquaza|70|{SKY PILLAR}
+S|Kecleon|30|{FORTREE CITY} / {ROUTE 120}
+S|Voltorb|25|{NEW MAUVILLE}
+S|Electrode|30|{TEAM AQUA HIDEOUT}
+S|Sudowoodo|40|{BATTLE FRONTIER}
+S|Latios|50|{SOUTHERN ISLAND}
+S|Latias|50|{SOUTHERN ISLAND}
+S|Deoxys|30|{BIRTH ISLAND}
+S|Mew|30|{FARAWAY ISLAND}
+S|Ho-Oh|70|{NAVEL ROCK}
+S|Lugia|70|{NAVEL ROCK}
+S|Wynaut|*|{LAVARIDGE TOWN}
+S|Beldum|5|{MOSSDEEP CITY} (Steven's house) || {MOSSDEEP CITY} (casa de Steven)
+S|Castform|25|{WEATHER INSTITUTE}, {ROUTE 119}
+S|Zigzagoon|2|{ROUTE 101}
+T|Ralts|Seedot|{RUSTBORO CITY}
+T|Volbeat|Plusle|{FORTREE CITY}
+T|Bagon|Horsea|{PACIFIDLOG TOWN}
+T|Skitty|Meowth|{BATTLE FRONTIER}
+
+# ------------------------------------------------------------------------------------------------ Diamond and Pearl
+@family dp
+S|Starly|2|{ROUTE 201}
+S|Dialga|47|{SPEAR PILLAR}, {MT. CORONET}
+S|Palkia|47|{SPEAR PILLAR}, {MT. CORONET}
+S|Uxie|50|{LAKE ACUITY}
+S|Azelf|50|{LAKE VALOR}
+S|Mesprit|50|{LAKE VERITY}
+S|Heatran|70|{STARK MOUNTAIN}
+S|Regigigas|70|{SNOWPOINT TEMPLE}
+S|Giratina|70|{TURNBACK CAVE}
+S|Darkrai|40|{NEWMOON ISLAND}
+S|Shaymin|30|{FLOWER PARADISE}
+S|Cresselia|50|{FULLMOON ISLAND}
+S|Arceus|80|{HALL OF ORIGIN}
+S|Eevee|5|{HEARTHOME CITY}
+S|Riolu|1|{IRON ISLAND}
+S|Drifloon|22|{VALLEY WINDWORKS}
+S|Rotom|15|{OLD CHATEAU}, {ETERNA FOREST}
+S|Spiritomb|25|{ROUTE 209}
+S|Aerodactyl|20|{OREBURGH CITY} ({FOSSIL}) || {OREBURGH CITY} ({FOSSIL})
+S|Omanyte|20|{OREBURGH CITY} ({FOSSIL}) || {OREBURGH CITY} ({FOSSIL})
+S|Kabuto|20|{OREBURGH CITY} ({FOSSIL}) || {OREBURGH CITY} ({FOSSIL})
+S|Lileep|20|{OREBURGH CITY} ({FOSSIL}) || {OREBURGH CITY} ({FOSSIL})
+S|Anorith|20|{OREBURGH CITY} ({FOSSIL}) || {OREBURGH CITY} ({FOSSIL})
+S|Shieldon|20|{OREBURGH CITY} ({FOSSIL}) || {OREBURGH CITY} ({FOSSIL})
+S|Cranidos|20|{OREBURGH CITY} ({FOSSIL}) || {OREBURGH CITY} ({FOSSIL})
+T|Machop|Abra|{OREBURGH CITY}
+T|Buizel|Chatot|{ETERNA CITY}
+T|Medicham|Haunter|{SNOWPOINT CITY}
+T|Finneon|Magikarp|{ROUTE 226}
+
+# ------------------------------------------------------------------------------------------------ Platinum
+@family platinum
+S|Giratina|47|{DISTORTION WORLD}
+S|Uxie|50|{LAKE ACUITY}
+S|Azelf|50|{LAKE VALOR}
+S|Mesprit|50|{LAKE VERITY}
+S|Dialga|70|{SPEAR PILLAR}, {MT. CORONET}
+S|Palkia|70|{SPEAR PILLAR}, {MT. CORONET}
+S|Heatran|50|{STARK MOUNTAIN}
+S|Regigigas|1|{SNOWPOINT TEMPLE}
+S|Registeel|30|{IRON ISLAND}
+S|Regice|30|{MT. CORONET}
+S|Regirock|30|{ROUTE 228}
+S|Darkrai|50|{NEWMOON ISLAND}
+S|Shaymin|30|{FLOWER PARADISE}, {ROUTE 224}
+S|Arceus|80|{SPEAR PILLAR}, {MT. CORONET}
+S|Cresselia|50|{FULLMOON ISLAND}
+S|Articuno|60|{ROAM_SINNOH}
+S|Zapdos|60|{ROAM_SINNOH}
+S|Moltres|60|{ROAM_SINNOH}
+S|Togepi|*|{ETERNA CITY}
+S|Eevee|20|{HEARTHOME CITY}
+S|Porygon|25|{VEILSTONE CITY}
+S|Riolu|*|{IRON ISLAND}
+S|Drifloon|15|{VALLEY WINDWORKS}
+S|Rotom|20|{OLD CHATEAU}, {ETERNA FOREST}
+S|Spiritomb|25|{ROUTE 209}
+S|Aerodactyl|20|{OREBURGH CITY} ({FOSSIL}) || {OREBURGH CITY} ({FOSSIL})
+S|Omanyte|20|{OREBURGH CITY} ({FOSSIL}) || {OREBURGH CITY} ({FOSSIL})
+S|Kabuto|20|{OREBURGH CITY} ({FOSSIL}) || {OREBURGH CITY} ({FOSSIL})
+S|Lileep|20|{OREBURGH CITY} ({FOSSIL}) || {OREBURGH CITY} ({FOSSIL})
+S|Anorith|20|{OREBURGH CITY} ({FOSSIL}) || {OREBURGH CITY} ({FOSSIL})
+S|Shieldon|20|{OREBURGH CITY} ({FOSSIL}) || {OREBURGH CITY} ({FOSSIL})
+S|Cranidos|20|{OREBURGH CITY} ({FOSSIL}) || {OREBURGH CITY} ({FOSSIL})
+T|Machop|Abra|{OREBURGH CITY}
+T|Buizel|Chatot|{ETERNA CITY}
+T|Medicham|Haunter|{SNOWPOINT CITY}
+T|Finneon|Magikarp|{ROUTE 226}
+
+# ------------------------------------------------------------------------------------------------ HeartGold and SoulSilver
+@family hgss
+S|Lugia|*|{WHIRL ISLANDS}
+S|Ho-Oh|*|{BELL TOWER}
+S|Suicune|40|{ROUTE 25}, {BURNED TOWER}
+S|Articuno|50|{SEAFOAM ISLANDS}
+S|Zapdos|50|{ROUTE 10}
+S|Moltres|50|{MT. SILVER CAVE}
+S|Mewtwo|70|{CERULEAN CAVE}
+S|Kyogre|50|{EMBEDDED TOWER}, {ROUTE 47}
+S|Groudon|50|{EMBEDDED TOWER}, {ROUTE 47}
+S|Rayquaza|50|{EMBEDDED TOWER}, {ROUTE 47}
+S|Dialga|1|{SINJOH RUINS}
+S|Palkia|1|{SINJOH RUINS}
+S|Giratina|1|{SINJOH RUINS}
+S|Latias|40|{PEWTER CITY} (Museum) || {PEWTER CITY} (Museo)
+S|Latios|40|{PEWTER CITY} (Museum) || {PEWTER CITY} (Museo)
+S|Latias|35|{ROAM_KANTO}
+S|Latios|35|{ROAM_KANTO}
+S|Raikou|40|{ROAM_JOHTO}
+S|Entei|40|{ROAM_JOHTO}
+S|Sudowoodo|20|{ROUTE 36}
+S|Lapras|20|{UNION CAVE}
+S|Gyarados|30|{LAKE OF RAGE}
+S|Snorlax|50|{ROUTE 11} / {ROUTE 12}
+S|Koffing|21|{TEAM ROCKET BASE}, {MAHOGANY TOWN}
+S|Voltorb|23|{TEAM ROCKET BASE}, {MAHOGANY TOWN}
+S|Geodude|21|{TEAM ROCKET BASE}, {MAHOGANY TOWN}
+S|Electrode|23|{TEAM ROCKET BASE}, {MAHOGANY TOWN}
+S|Eevee|5|Bill's house, {GOLDENROD CITY} || Casa de Bill, {GOLDENROD CITY}
+S|Tyrogue|10|{MT. MORTAR}
+S|Dratini|15|{DRAGON'S DEN}
+S|Dratini|15|{GOLDENROD CITY}, {GAME CORNER} {PRIZE}
+S|Eevee|15|{CELADON CITY}, {GAME CORNER} {PRIZE}
+S|Bulbasaur|5|Oak's Lab, {PALLET TOWN} || Laboratorio de Oak, {PALLET TOWN}
+S|Squirtle|5|Oak's Lab, {PALLET TOWN} || Laboratorio de Oak, {PALLET TOWN}
+S|Charmander|5|Oak's Lab, {PALLET TOWN} || Laboratorio de Oak, {PALLET TOWN}
+S|Treecko|5|{SILPH CO}, {SAFFRON CITY}
+S|Torchic|5|{SILPH CO}, {SAFFRON CITY}
+S|Mudkip|5|{SILPH CO}, {SAFFRON CITY}
+S|Aerodactyl|20|{PEWTER CITY}, Museum of Science ({FOSSIL}) || {PEWTER CITY}, Museo de Ciencias ({FOSSIL})
+S|Omanyte|20|{PEWTER CITY}, Museum of Science ({FOSSIL}) || {PEWTER CITY}, Museo de Ciencias ({FOSSIL})
+S|Kabuto|20|{PEWTER CITY}, Museum of Science ({FOSSIL}) || {PEWTER CITY}, Museo de Ciencias ({FOSSIL})
+S|Lileep|20|{PEWTER CITY}, Museum of Science ({FOSSIL}) || {PEWTER CITY}, Museo de Ciencias ({FOSSIL})
+S|Anorith|20|{PEWTER CITY}, Museum of Science ({FOSSIL}) || {PEWTER CITY}, Museo de Ciencias ({FOSSIL})
+S|Shieldon|20|{PEWTER CITY}, Museum of Science ({FOSSIL}) || {PEWTER CITY}, Museo de Ciencias ({FOSSIL})
+S|Cranidos|20|{PEWTER CITY}, Museum of Science ({FOSSIL}) || {PEWTER CITY}, Museo de Ciencias ({FOSSIL})
+S|Mareep|*|{VIOLET CITY}
+S|Wooper|*|{VIOLET CITY}
+S|Slugma|*|{VIOLET CITY}
+S|Togepi|*|{VIOLET CITY}
+S|Tentacool|15|{CIANWOOD CITY}
+S|Shuckle|20|{CIANWOOD CITY}
+S|Spearow|20|{ROUTE 35} (Goldenrod gate) || {ROUTE 35} (puerta de Ciudad Trigal)
+S|Abra|15|{GOLDENROD CITY}, {GAME CORNER} {PRIZE}
+S|Ekans|15|{GOLDENROD CITY}, {GAME CORNER} {PRIZE}
+S|Sandshrew|15|{GOLDENROD CITY}, {GAME CORNER} {PRIZE}
+S|Mr. Mime|15|{CELADON CITY}, {GAME CORNER} {PRIZE}
+S|Porygon|15|{CELADON CITY}, {GAME CORNER} {PRIZE}
+T|Bellsprout|Onix|{VIOLET CITY}
+T|Drowzee|Machop|{GOLDENROD CITY} (Department Store) || {GOLDENROD CITY} (Gran Almacén)
+T|Krabby|Voltorb|{OLIVINE CITY}
+T|Dragonair|Dodrio|{BLACKTHORN CITY}
+T|Haunter|Xatu|{PEWTER CITY} (Pokemon Center) || {PEWTER CITY} (Centro Pokémon)
+T|Dugtrio|Magneton|{POWER PLANT}, {ROUTE 10}
+T|Pikachu|Pikachu|{SAFFRON CITY} (Magnet Train station) || {SAFFRON CITY} (estación del Magnetotren)
+T|Forretress|Beldum|{SILPH CO}, {SAFFRON CITY}
+T|Bonsly|Rhyhorn|{DIGLETT'S CAVE} (Brock) || {DIGLETT'S CAVE} (Brock)
+T|*|Steelix|{CIANWOOD CITY} (Gym) || {CIANWOOD CITY} (Gimnasio)
+
+# ------------------------------------------------------------------------------------------------ Black and White
+@family bw
+S|Pansage|10|{DREAMYARD}
+S|Pansear|10|{DREAMYARD}
+S|Panpour|10|{DREAMYARD}
+S|Magikarp|5|{MARVELOUS BRIDGE}
+S|Zorua|10|{CASTELIA CITY}
+S|Larvesta|*|{ROUTE 18}
+S|Darmanitan|35|{DESERT RESORT}
+S|Musharna|50|{DREAMYARD}
+S|Zoroark|25|{LOSTLORN FOREST}
+S|Volcarona|70|{RELIC CASTLE}, {DESERT RESORT}
+S|Victini|15|Liberty Garden, Liberty Island || Jardín Libertad, Isla Libertad
+S|Reshiram|50|N's Castle || Castillo de N
+S|Zekrom|50|N's Castle || Castillo de N
+S|Cobalion|42|{MISTRALTON CAVE}
+S|Terrakion|42|{VICTORY ROAD}
+S|Virizion|42|{PINWHEEL FOREST}
+S|Landorus|70|{ABUNDANT SHRINE}
+S|Kyurem|75|{GIANT CHASM}
+S|Cranidos|25|{TWIST MOUNTAIN} ({FOSSIL}) || {TWIST MOUNTAIN} ({FOSSIL})
+S|Shieldon|25|{TWIST MOUNTAIN} ({FOSSIL}) || {TWIST MOUNTAIN} ({FOSSIL})
+S|Omanyte|25|{TWIST MOUNTAIN} ({FOSSIL}) || {TWIST MOUNTAIN} ({FOSSIL})
+S|Kabuto|25|{TWIST MOUNTAIN} ({FOSSIL}) || {TWIST MOUNTAIN} ({FOSSIL})
+S|Aerodactyl|25|{TWIST MOUNTAIN} ({FOSSIL}) || {TWIST MOUNTAIN} ({FOSSIL})
+S|Anorith|25|{TWIST MOUNTAIN} ({FOSSIL}) || {TWIST MOUNTAIN} ({FOSSIL})
+S|Lileep|25|{TWIST MOUNTAIN} ({FOSSIL}) || {TWIST MOUNTAIN} ({FOSSIL})
+S|Tirtouga|25|{RELIC CASTLE} ({FOSSIL}, {NACRENE CITY}) || {RELIC CASTLE} ({FOSSIL}, {NACRENE CITY})
+S|Archen|25|{RELIC CASTLE} ({FOSSIL}, {NACRENE CITY}) || {RELIC CASTLE} ({FOSSIL}, {NACRENE CITY})
+S|Foongus|20|{ROUTE 6} / {ROUTE 10}
+S|Amoonguss|40|{ROUTE 10}
+S|Thundurus|40|{ROAM_UNOVA}
+S|Tornadus|40|{ROAM_UNOVA}
+T|Cottonee|Petilil|{NACRENE CITY}
+T|Petilil|Cottonee|{NACRENE CITY}
+T|Minccino|Basculin|{DRIFTVEIL CITY}
+T|Boldore|Emolga|{ROUTE 7}
+T|Emolga|Boldore|{ROUTE 7}
+T|Cinccino|Munchlax|{UNDELLA TOWN}
+T|Ditto|Rotom|{ROUTE 15}
+
+# ------------------------------------------------------------------------------------------------ Black 2 and White 2
+@family bw2
+S|Cobalion|45|{ROUTE 13}
+S|Virizion|45|{ROUTE 11}
+S|Terrakion|45|{ROUTE 22}
+S|Reshiram|70|{DRAGONSPIRAL TOWER}
+S|Zekrom|70|{DRAGONSPIRAL TOWER}
+S|Kyurem|70|{GIANT CHASM}
+S|Latias|68|{DREAMYARD}
+S|Latios|68|{DREAMYARD}
+S|Uxie|65|{NACRENE CITY} (Museum) || {NACRENE CITY} (Museo)
+S|Mesprit|65|{CELESTIAL TOWER}
+S|Azelf|65|{ROUTE 23}
+S|Regirock|65|{CLAY TUNNEL}
+S|Regice|65|{CLAY TUNNEL}
+S|Registeel|65|{CLAY TUNNEL}
+S|Regigigas|68|{TWIST MOUNTAIN}
+S|Cresselia|68|{STRANGE HOUSE}
+S|Heatran|68|{REVERSAL MOUNTAIN}
+S|Mandibuzz|25|{ROUTE 4}
+S|Braviary|25|{ROUTE 4}
+S|Volcarona|35|{RELIC PASSAGE}
+S|Crustle|42|{SEASIDE CAVE}
+S|Jellicent|40|{UNDELLA BAY}
+S|Haxorus|60|{NATURE PRESERVE}
+S|Eevee|10|Castelia City, Dream Research Lab || Ciudad Porcelana, Laboratorio de Sueños
+S|Deerling|30|{WEATHER INSTITUTE}
+S|Gible|1|{BLACK CITY} / {WHITE FOREST}
+S|Dratini|1|{BLACK CITY} / {WHITE FOREST}
+S|Happiny|*|{NACRENE CITY} (gate) || {NACRENE CITY} (puerta)
+S|Magikarp|5|{MARVELOUS BRIDGE}
+S|Cranidos|25|{TWIST MOUNTAIN} ({FOSSIL}) || {TWIST MOUNTAIN} ({FOSSIL})
+S|Shieldon|25|{TWIST MOUNTAIN} ({FOSSIL}) || {TWIST MOUNTAIN} ({FOSSIL})
+S|Omanyte|25|{TWIST MOUNTAIN} ({FOSSIL}) || {TWIST MOUNTAIN} ({FOSSIL})
+S|Kabuto|25|{TWIST MOUNTAIN} ({FOSSIL}) || {TWIST MOUNTAIN} ({FOSSIL})
+S|Aerodactyl|25|{TWIST MOUNTAIN} ({FOSSIL}) || {TWIST MOUNTAIN} ({FOSSIL})
+S|Anorith|25|{TWIST MOUNTAIN} ({FOSSIL}) || {TWIST MOUNTAIN} ({FOSSIL})
+S|Lileep|25|{TWIST MOUNTAIN} ({FOSSIL}) || {TWIST MOUNTAIN} ({FOSSIL})
+S|Tirtouga|25|{NACRENE CITY} (Museum) || {NACRENE CITY} (Museo)
+S|Archen|25|{NACRENE CITY} (Museum) || {NACRENE CITY} (Museo)
+S|Zorua|25|{NACRENE CITY}
+S|Minccino|20|{ROUTE 5}
+S|Liepard|20|{ROUTE 5}
+S|Foongus|*|{ROUTE 6} / {ROUTE 7}
+T|Cottonee|Petilil|{ROUTE 4}
+T|Petilil|Cottonee|{ROUTE 4}
+T|Emolga|Gigalith|{ROUTE 7}
+T|Mantine|Tangrowth|{UNDELLA TOWN}
+T|Ditto|Rotom|{ROUTE 15}
+T|Excadrill|Ambipom|{ACCUMULA TOWN}
+T|Hippowdon|Alakazam|{ACCUMULA TOWN}
+
+# ------------------------------------------------------------------------------------------------ X and Y
+@family xy
+S|Mewtwo|70|{UNKNOWN DUNGEON}
+S|Zygarde|70|{TERMINUS CAVE}
+S|Lileep|20|{AMBRETTE TOWN} ({FOSSIL}) || {AMBRETTE TOWN} ({FOSSIL})
+S|Anorith|20|{AMBRETTE TOWN} ({FOSSIL}) || {AMBRETTE TOWN} ({FOSSIL})
+S|Omanyte|20|{AMBRETTE TOWN} ({FOSSIL}) || {AMBRETTE TOWN} ({FOSSIL})
+S|Kabuto|20|{AMBRETTE TOWN} ({FOSSIL}) || {AMBRETTE TOWN} ({FOSSIL})
+S|Aerodactyl|20|{AMBRETTE TOWN} ({FOSSIL}) || {AMBRETTE TOWN} ({FOSSIL})
+S|Shieldon|20|{AMBRETTE TOWN} ({FOSSIL}) || {AMBRETTE TOWN} ({FOSSIL})
+S|Cranidos|20|{AMBRETTE TOWN} ({FOSSIL}) || {AMBRETTE TOWN} ({FOSSIL})
+S|Tirtouga|20|{AMBRETTE TOWN} ({FOSSIL}) || {AMBRETTE TOWN} ({FOSSIL})
+S|Archen|20|{AMBRETTE TOWN} ({FOSSIL}) || {AMBRETTE TOWN} ({FOSSIL})
+S|Tyrunt|20|{AMBRETTE TOWN} ({FOSSIL}) || {AMBRETTE TOWN} ({FOSSIL})
+S|Amaura|20|{AMBRETTE TOWN} ({FOSSIL}) || {AMBRETTE TOWN} ({FOSSIL})
+S|Lucario|32|{SHALOUR CITY} (Tower of Mastery) || {SHALOUR CITY} (Torre Maestra)
+T|Gyarados|Magikarp|{LUMIOSE CITY} (hotel) || {LUMIOSE CITY} (hotel)
+T|*|Eevee|{LUMIOSE CITY} (hotel) || {LUMIOSE CITY} (hotel)
+T|Bunnelby|Farfetch'd|{SANTALUNE CITY}
+T|Luvdisc|Steelix|{CYLLAGE CITY}
+T|Jigglypuff|Bisharp|{SNOWBELLE CITY}
+T|*|Froakie|{VANIVILLE TOWN}
+T|*|Chespin|{VANIVILLE TOWN}
+T|*|Fennekin|{VANIVILLE TOWN}
+T|*|Ralts|{LUMIOSE CITY}
+
+# ------------------------------------------------------------------------------------------------ Omega Ruby and Alpha Sapphire
+@family oras
+S|Poochyena|3|{ROUTE 101}
+S|Voltorb|25|{NEW MAUVILLE}
+S|Spiritomb|50|Sea Mauville || {SEA MAUVILLE}
+S|Kyogre|45|{CAVE OF ORIGIN}
+S|Groudon|45|{CAVE OF ORIGIN}
+S|Rayquaza|70|{SKY PILLAR}
+S|Heatran|50|{SCORCHED SLAB}
+S|Regirock|40|{DESERT TOMB}, {ROUTE 111}
+S|Regice|40|{ISLAND CAVE}, {ROUTE 105}
+S|Registeel|40|{ANCIENT TOMB}, {ROUTE 120}
+S|Regigigas|50|{PACIFIDLOG TOWN}
+S|Electrode|40|{TEAM MAGMA HIDEOUT} / {TEAM AQUA HIDEOUT}
+S|Kecleon|*|{ROUTE 120} / {LAVARIDGE TOWN} / {MOSSDEEP CITY}
+S|Wynaut|*|{LAVARIDGE TOWN}
+S|Togepi|*|{LAVARIDGE TOWN}
+S|Beldum|1|{MOSSDEEP CITY} (Steven's house) || {MOSSDEEP CITY} (casa de Steven)
+S|Castform|30|{WEATHER INSTITUTE}, {ROUTE 119}
+S|Latios|30|{SOUTHERN ISLAND}
+S|Latias|30|{SOUTHERN ISLAND}
+S|Pikachu|20|{SLATEPORT CITY} (Contests) || {SLATEPORT CITY} (Concursos)
+S|Lileep|20|{RUSTBORO CITY} (Devon Corporation, {FOSSIL}) || {RUSTBORO CITY} (Devon Corporation, {FOSSIL})
+S|Anorith|20|{RUSTBORO CITY} (Devon Corporation, {FOSSIL}) || {RUSTBORO CITY} (Devon Corporation, {FOSSIL})
+S|Camerupt|40|Battle Resort || Resort Batalla
+S|Sharpedo|40|Battle Resort || Resort Batalla
+T|Slakoth|Makuhita|{RUSTBORO CITY}
+T|Spinda|Skitty|{FORTREE CITY}
+T|Bellossom|Corsola|{PACIFIDLOG TOWN}
+
+# ------------------------------------------------------------------------------------------------ Sun and Moon
+@family sm
+S|Tapu Koko|60|{RUINS OF CONFLICT}
+S|Tapu Lele|60|{RUINS OF LIFE}
+S|Tapu Bulu|60|{RUINS OF ABUNDANCE}
+S|Tapu Fini|60|{RUINS OF HOPE}
+S|Solgaleo|55|{ALTAR}
+S|Lunala|55|{ALTAR}
+T|Spearow|Machop|{ROUTE 2}
+T|Lillipup|Bounsweet|{ROUTE 5}
+T|Zubat|Poliwhirl|{KONIKONI CITY}
+T|Pancham|Happiny|{MALIE CITY}
+T|Haunter|Graveler|{TAPU VILLAGE}
+T|Granbull|Steenee|{SEAFOLK VILLAGE}
+T|Bewear|Talonflame|{PONI GAUNTLET}
+
+# ------------------------------------------------------------------------------------------------ Ultra Sun and Ultra Moon
+@family usum
+S|Tapu Koko|60|{RUINS OF CONFLICT}
+S|Tapu Lele|60|{RUINS OF LIFE}
+S|Tapu Bulu|60|{RUINS OF ABUNDANCE}
+S|Tapu Fini|60|{RUINS OF HOPE}
+S|Solgaleo|60|{ALTAR}
+S|Lunala|60|{ALTAR}
+T|Spearow|Hawlucha|{ROUTE 2}
+T|Lillipup|Noibat|{ROUTE 5}
+T|Tentacool|Barboach|{ROYAL AVENUE}
+T|Trumbeak|Arbok|{ROUTE 8}
+T|Phantump|Phantump|{TAPU VILLAGE}
+T|Granbull|Shellos|{SEAFOLK VILLAGE}
+T|Bewear|Tauros|{PONI GAUNTLET}

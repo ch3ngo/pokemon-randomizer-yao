@@ -290,12 +290,15 @@ public class ItemRandomizerTest extends RandomizerTest{
         assertEquals(xItems.size(), placedXCount);
     }
 
-    // Added (modified from FVX, 11/10/2026, web UI feedback item 15): confirms the two properties the
-    // user asked to be verified: a special shop's items never change when the regular shop pool is
-    // randomized, and a TM slot in a randomizable shop is replaced by another TM, never a regular item.
+    // Added (modified from FVX, 11/10/2026, web UI feedback item 15; updated 13/10/2026 web UI feedback item 58):
+    // confirms a special shop's items never change when the regular shop pool is randomized, a non-TM slot of a
+    // non-special shop (a regular Poke Mart) never changes either, and a TM slot anywhere (special shop, regular
+    // mart or a dedicated TM shop) is always replaced by another TM, never a regular item and never left as the
+    // same vanilla TM. Non-special shops used to be entirely untouched; the user decided TMs sold anywhere should
+    // always be randomized, so only their non-TM slots stay exempt now.
     @ParameterizedTest
     @MethodSource("getRomNames")
-    public void randomizeShopItemsNeverChangesNonSpecialShops(String romName) {
+    public void randomizeShopItemsNeverChangesNonSpecialNonTMSlots(String romName) {
         activateRomHandler(romName);
         assumeTrue(romHandler.hasShopSupport());
 
@@ -304,6 +307,7 @@ public class ItemRandomizerTest extends RandomizerTest{
                 .map(shop -> new Shop(shop))
                 .collect(Collectors.toList());
         assumeTrue(!before.isEmpty());
+        assumeTrue(before.stream().anyMatch(shop -> shop.getItems().stream().anyMatch(i -> i != null && !i.isTM())));
 
         new ItemRandomizer(romHandler, new Settings(), RND).randomizeShopItems();
 
@@ -312,8 +316,49 @@ public class ItemRandomizerTest extends RandomizerTest{
                 .collect(Collectors.toList());
         assertEquals(before.size(), after.size());
         for (int i = 0; i < before.size(); i++) {
-            assertEquals(before.get(i).getItems(), after.get(i).getItems(),
-                    "Shop \"" + before.get(i).getName() + "\" is not a special shop and should never change.");
+            List<Item> beforeItems = before.get(i).getItems();
+            List<Item> afterItems = after.get(i).getItems();
+            assertEquals(beforeItems.size(), afterItems.size());
+            for (int j = 0; j < beforeItems.size(); j++) {
+                Item original = beforeItems.get(j);
+                if (original == null || !original.isTM()) {
+                    assertEquals(original, afterItems.get(j),
+                            "Shop \"" + before.get(i).getName() + "\" slot " + j + " is not a TM in a non-special "
+                                    + "shop and should never change.");
+                }
+            }
+        }
+    }
+
+    // Added (13/10/2026, web UI feedback item 58): a TM slot in a non-special shop (a regular Poke Mart's TM
+    // rack or a dedicated TM shop) is now always randomized too, the same as a TM slot in a special shop.
+    @ParameterizedTest
+    @MethodSource("getRomNames")
+    public void randomizeShopItemsReplacesTMSlotsInNonSpecialShopsToo(String romName) {
+        activateRomHandler(romName);
+        assumeTrue(romHandler.hasShopSupport());
+
+        List<Shop> nonSpecialBefore = romHandler.getShops().stream()
+                .filter(shop -> !shop.isSpecialShop())
+                .map(shop -> new Shop(shop))
+                .collect(Collectors.toList());
+        assumeTrue(nonSpecialBefore.stream().anyMatch(shop -> shop.getItems().stream().anyMatch(i -> i != null && i.isTM())));
+
+        new ItemRandomizer(romHandler, new Settings(), RND).randomizeShopItems();
+
+        List<Shop> nonSpecialAfter = romHandler.getShops().stream()
+                .filter(shop -> !shop.isSpecialShop())
+                .collect(Collectors.toList());
+        for (int i = 0; i < nonSpecialBefore.size(); i++) {
+            List<Item> beforeItems = nonSpecialBefore.get(i).getItems();
+            List<Item> afterItems = nonSpecialAfter.get(i).getItems();
+            for (int j = 0; j < beforeItems.size(); j++) {
+                Item original = beforeItems.get(j);
+                if (original != null && original.isTM()) {
+                    assertTrue(afterItems.get(j).isTM(), "Shop \"" + nonSpecialBefore.get(i).getName()
+                            + "\" slot " + j + " held a TM before randomizing and should still hold a TM.");
+                }
+            }
         }
     }
 

@@ -34,6 +34,7 @@ function h(tag, props, ...kids) {
 }
 
 const ICON = {
+  dice: '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="13" y="2" width="9" height="9" rx="2"/><rect x="2" y="12" width="10" height="10" rx="2"/><g fill="currentColor" stroke="none"><circle cx="15.4" cy="4.4" r="1"/><circle cx="17.5" cy="6.5" r="1"/><circle cx="19.6" cy="8.6" r="1"/><circle cx="4.6" cy="14.6" r="1"/><circle cx="9.4" cy="14.6" r="1"/><circle cx="7" cy="17" r="1"/><circle cx="4.6" cy="19.4" r="1"/><circle cx="9.4" cy="19.4" r="1"/></g></svg>',
   search: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>',
   folder: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 6a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>',
   rom: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 11h8M8 15h4"/></svg>',
@@ -130,6 +131,14 @@ async function nativeBrowse({ mode, filter, title, startDir, onPick }) {
   if (data.path) onPick(data.path);
 }
 
+// Added (13/10/2026, web UI feedback): a plain `input.value = path` leaves the text field scrolled to its start,
+// so a long path only ever shows its beginning ("C:\Users\..."), the part that is the same for every file, instead
+// of the end that actually tells folders and files apart. Called right after setting the value of any path field.
+function showPathEnd(input) {
+  input.scrollLeft = input.scrollWidth;
+  try { input.setSelectionRange(input.value.length, input.value.length); } catch (e) { /* not a text-like input */ }
+}
+
 // ------------------------------------------------------------------ state
 const S = {
   info: null, rom: null, schema: null, defaults: {}, values: {}, yao: null,
@@ -141,7 +150,8 @@ const S = {
 function defaultYao() {
   return {
     shinyPercent: 0, locke: 'none', keepBasicShopItems: false, protectedItems: [], shopItems: [],
-    boostFloor: 0, statEdits: [], megaFinale: { gymLeaders: false, league: false, evilBosses: false, otherBosses: false, everyone: false, replace: false, fromLevel: 0 }, battleStyleRules: [], playerSprites: { male: '', female: '' }, evolutions: [], removals: [], evolutionScale: { enabled: false, minLevel: 30, percent: 20 }, fullyEvolvedByLevel: 0,
+    boostFloor: 0, boostPercent: 0, statEdits: [], megaFinale: { gymLeaders: false, league: false, evilBosses: false, otherBosses: false, everyone: false, replace: false, fromLevel: 0 }, battleStyleRules: [], playerSprites: { male: '', female: '' }, evolutions: [], removals: [], evolutionScale: { enabled: false, minLevel: 30, percent: 20 }, fullyEvolvedByLevel: 0, stoneEvolutionsAlsoLevel: false,
+    incrementalMovesets: true, trainerItems: 'tiered', regularTrainersKeepItems: false,
     eggBox: { count: 0, legendary: 'any', stages: [], basicOnly: false, duplicates: false },
   };
 }
@@ -205,9 +215,10 @@ function yaoCount() {
   if (y.locke !== 'none') n++;
   if (y.shopItems.length) n++;
   if (y.keepBasicShopItems || y.protectedItems.length) n++;
-  if (y.boostFloor > 0 || y.statEdits.length) n++;
-  if (y.evolutions.length || y.removals.length || y.evolutionScale.percent > 0 || y.fullyEvolvedByLevel > 0) n++;
+  if (y.boostFloor > 0 || y.boostPercent > 0 || y.statEdits.length) n++;
+  if (y.evolutions.length || y.removals.length || y.evolutionScale.percent > 0 || y.fullyEvolvedByLevel > 0 || y.stoneEvolutionsAlsoLevel) n++;
   if (y.eggBox.count > 0) n++;
+  if (y.incrementalMovesets === false || y.trainerItems === 'unchanged' || y.regularTrainersKeepItems) n++;
   if (megaAny(y.megaFinale) && S.rom.features.megas) n++;
   if (y.battleStyleRules.length && S.rom.features.battleStyles && S.rom.features.battleStyles.length) n++;
   if ((y.playerSprites.male || y.playerSprites.female) && S.rom.features.playerSprites.available) n++;
@@ -572,7 +583,7 @@ async function loadRom(path) {
   } catch (e) {
     S.rom = null; enableSteps(); renderGame();
     toast(e.message, 'bad', 9000);
-    const inp = $('input[type=text]', $('#view-game')); if (inp) inp.value = path;
+    const inp = $('input[type=text]', $('#view-game')); if (inp) { inp.value = path; showPathEnd(inp); }
   }
 }
 
@@ -679,6 +690,8 @@ function segControl(options, value, onChange, tipsOn, disabled) {
 // disables its control and dims the row when this returns false; rerenderGroup already re-runs this on every
 // change, including a parent toggle, since setVal re-draws the whole group.
 function fieldEnabled(f) {
+  // dependsOnValue (13/10/2026): the parent is a drop-down and this field only matters for one of its choices.
+  if (f.dependsOn && f.dependsOnValue !== undefined) return S.values[f.dependsOn] === f.dependsOnValue;
   return !f.dependsOn || !!S.values[f.dependsOn];
 }
 
@@ -817,6 +830,14 @@ const SUBGROUPS = {
     intro: true,
     blocks: [
       { title: 'Better movesets', desc: 'Trainer Pokemon get moves chosen to work together, including TM, tutor, egg and earlier-evolution moves, instead of whatever their level-up list gives them. Makes fights harder and less predictable.',
+        details: [
+          'What it does: for every Pokemon of the tiers you turn on, the program builds the list of moves it could know at its level (level-up, TM, tutor, egg and earlier-evolution moves), throws out useless ones, and then picks four that fit together: moves of its own type (STAB), moves that match its Attack or Special Attack, and moves that work with its ability and with each other.',
+          'Incremental (the switch below, on by default): the moves grow with the stage of the game, so the first gym leader does not get the best move of their type. An attacking move may have at most 40 + 1.4 x level power: about 54 at level 10, 75 at level 25, 96 at level 40, 110 at level 50, and nothing is held back from level 60. Evil-team bosses and rivals get +5, the Elite Four and Champion +15. Multi-hit moves count every hit, charge and recharge moves count half. From level 25, weak filler attacks are dropped as long as two stronger ones are left.',
+          'Physical or special: a Pokemon whose Attack is clearly higher than its Special Attack (1.25 times or more) only gets physical attacks, the reverse only special ones, and mixed attackers keep both. This only applies when at least two moves of the right kind exist.',
+          'Good and bad status moves (Boss and Important trainers, from level 20): weak stat changes such as Growl, Leer, Tail Whip or Sand Attack and unreliable status moves (under 70% accuracy) are dropped. Swords Dance and Calm Mind style boosts, Screech style drops, and reliable Sleep, Paralysis, Burn and Poison moves stay.',
+          'Example: a level 15 Pokemon of the first gym leader can use attacks up to power 61 (such as Bite or Water Pulse), never Earthquake or Thunderbolt. The same species on the Champion at level 60 can use anything. Only trainers are affected, never wild or caught Pokemon. If a rule would leave a Pokemon without attacks, the rule is skipped for it.',
+        ],
+        yaoToggle: ['incrementalMovesets', 'Moves grow with the level and the stage of the game', 'On: trainers use good moves from the first gym (around 50 to 60 power) and Elite Four trainers mostly 65 to 95 with a rare 120 or 150. Status moves are allowed for every Pokemon at every level but rare (Swords Dance, Spore), and a set has at least two attacking moves. Off: the old behaviour, a trainer may get the strongest move of its type at any level.'],
         tiers: ['betterBossTrainerMovesets', 'betterImportantTrainerMovesets', 'betterRegularTrainerMovesets'] },
       { title: 'Held items', desc: 'Trainer Pokemon get a held item in battle (or a different one than before). Turn on the tiers you want, then narrow down what kind of items they may get.',
         tiers: ['randomizeHeldItemsForBossTrainerPokemon', 'randomizeHeldItemsForImportantTrainerPokemon', 'randomizeHeldItemsForRegularTrainerPokemon'],
@@ -849,6 +870,15 @@ function renderSubgroups(g, rerender) {
   }
   for (const block of cfg.blocks) {
     const el = h('div', { class: 'subblock stack', style: { gap: '10px' } }, h('div', null, h('h4', { text: block.title }), h('div', { class: 'faint', style: { fontSize: '13px' }, text: block.desc })));
+    if (block.details) {
+      el.append(h('div', { class: 'stack', style: { gap: '8px' } }, ...block.details.map((t) => h('div', { class: 'muted', style: { fontSize: '14px' }, text: t }))));
+    }
+    if (block.yaoToggle) {
+      const [key, label, tip] = block.yaoToggle;
+      const i = h('input', { type: 'checkbox', 'aria-label': label }); i.checked = S.yao[key] !== false;
+      i.addEventListener('change', () => { S.yao[key] = i.checked; persist(); });
+      el.append(h('div', { class: 'opt' }, h('div', { class: 'name' }, h('span', { class: 't', text: label }), infoButton(tip)), h('label', { class: 'switch' }, i, h('span', { class: 'track' }), h('span', { class: 'thumb' }))));
+    }
     if (block.tiers) {
       const fields = block.tiers.map(fieldByKey);
       const cells = fields.map((f, i) => {
@@ -881,6 +911,131 @@ function renderSubgroups(g, rerender) {
   return body;
 }
 
+// Added (13/10/2026, web UI feedback item 50): the wild Pokemon group was a flat list of eighteen options whose names
+// ("1 Per Encounter Set", "Keep Set/Zone Themes", "Similar Strength"...) read as near duplicates. This presents the
+// same native settings as plain choices: ONE "how are Pokemon replaced" picker (mapped onto randomizeWildPokemon plus
+// wildPokemonZoneMod, so saved settings and settings strings are untouched and old files load exactly as before),
+// then separate, titled blocks for "which Pokemon may appear", "collecting rules", catch rate, held items and levels.
+const WILD_MODES = [
+  { id: 'ORIGINAL', title: 'Original', short: 'Wild Pokemon stay as in the game.',
+    long: 'Nothing about who lives where is changed. You can still change their levels, catch rate or held items below.',
+    example: 'Route 1 still has Pidgey and Rattata.' },
+  { id: 'NONE', title: 'Completely random', short: 'Every slot of every area gets its own random Pokemon.',
+    long: 'The most chaotic choice. Each slot is rolled on its own, so two slots that held the same Pokemon in the game can become two unrelated ones, even on the same route. Each area ends up with a handful of different Pokemon. In Omega Ruby and Alpha Sapphire this is approximated per map, because the exact version crashes the DexNav.',
+    example: 'The two Pidgey slots of Route 1 become Gengar and Magikarp.' },
+  { id: 'SWAP', title: 'Swap each Pokemon for another', short: 'Every Pokemon is replaced by one other Pokemon and always the same one. Choose how wide that swap applies.',
+    long: 'Each original Pokemon is exchanged for ONE new Pokemon, wherever the swap applies, so the places stay recognizable: if Pidgey becomes Growlithe, every Pidgey slot there becomes Growlithe. The only choice is how far that swap reaches.',
+    example: 'Pidgey becomes Growlithe in every slot the swap covers.' },
+];
+// How far a swap reaches. Each value is a wildPokemonZoneMod value, from the narrowest area to the widest.
+const WILD_SCOPES = [
+  { id: 'ENCOUNTER_SET', title: 'Each encounter set', long: 'A set is one list of Pokemon (the grass of a route, its surfing water, one cave floor). The swap is decided separately for each set, so the grass and the water of the same route are unrelated.',
+    example: 'Route 1 grass: Pidgey becomes Growlithe. Route 1 surfing: its own, different swap.' },
+  { id: 'MAP', title: 'Each map', long: 'A map is a route, or one floor of a cave or tower. The swap is the same for every set on that map (grass, surfing, fishing), and different maps are decided separately.',
+    example: 'On Route 1, Pidgey is Growlithe in the grass and when fishing. On Route 2, Pidgey is something else.' },
+  { id: 'NAMED_LOCATION', title: 'Each named place', long: 'Maps with the same place name share one swap, so all floors of a cave or all parts of a forest agree.',
+    example: 'Every floor of Mt. Moon turns Zubat into the same Pokemon.' },
+  { id: 'GAME', title: 'The whole game', long: 'One swap for the entire game, the classic species swap of the original randomizer. Easy to learn: you only have to remember one table.',
+    example: 'Pidgey is Growlithe on every route, in every cave, on every shore.' },
+];
+const WILD_MODE_KEYS = ['wildPokemonZoneMod', 'randomizeWildPokemon'];
+
+function wildModeOf() {
+  if (!S.values.randomizeWildPokemon) return 'ORIGINAL';
+  const z = S.values.wildPokemonZoneMod || 'GAME';
+  return z === 'NONE' ? 'NONE' : 'SWAP';
+}
+
+function renderWildBlocks(g, rerender) {
+  const fieldByKey = (k) => g.fields.find((f) => f.key === k && !isHiddenField(f.key));
+  const zoneField = g.fields.find((f) => f.key === 'wildPokemonZoneMod');
+  const zoneValues = zoneField ? zoneField.options.map((o) => o.value) : [];
+  const scopes = WILD_SCOPES.filter((m) => zoneValues.includes(m.id));
+  const modes = WILD_MODES.filter((m) => m.id === 'ORIGINAL' || (m.id === 'NONE' ? zoneValues.includes('NONE') : scopes.length > 0));
+  const mode = wildModeOf();
+  const body = h('div', { class: 'stack', style: { gap: '18px' } });
+
+  // 1. the mode picker. It is also the on/off switch of wild randomization (the group's own switch is hidden).
+  const picker = h('div', { class: 'stack', style: { gap: '8px' }, role: 'radiogroup', 'aria-label': 'How wild Pokemon are replaced' });
+  modes.forEach((m) => {
+    const sel = m.id === mode;
+    const card = h('button', { type: 'button', role: 'radio', 'aria-checked': String(sel), class: 'mode-card' + (sel ? ' on' : ''), onclick: () => {
+      if (m.id === 'ORIGINAL') { S.values.randomizeWildPokemon = false; }
+      else if (m.id === 'NONE') { S.values.randomizeWildPokemon = true; S.values.wildPokemonZoneMod = 'NONE'; }
+      else { S.values.randomizeWildPokemon = true; S.values.wildPokemonZoneMod = (S.wildScope && scopes.some((x) => x.id === S.wildScope)) ? S.wildScope : scopes[scopes.length - 1].id; }
+      persist(); rerender(); updateSideCounts();
+    } },
+      h('span', { class: 'mode-title', text: m.title }),
+      h('span', { class: 'mode-short', text: m.short }),
+      sel ? h('span', { class: 'mode-long', text: m.long }) : null,
+      sel && m.id !== 'SWAP' ? h('span', { class: 'mode-example', text: 'Example: ' + m.example }) : null);
+    picker.append(card);
+  });
+  const scopeBox = (() => {
+    if (mode !== 'SWAP') return null;
+    const cur = scopes.find((x) => x.id === S.values.wildPokemonZoneMod) || scopes[scopes.length - 1];
+    return h('div', { class: 'stack', style: { gap: '8px' } },
+      h('label', { class: 'field', text: 'How far does a swap reach?' }),
+      h('div', { class: 'row wrap' }, ...scopes.map((x) => h('button', { class: 'chip' + (x.id === cur.id ? ' on' : ''), type: 'button', text: x.title, onclick: () => { S.wildScope = x.id; S.values.wildPokemonZoneMod = x.id; persist(); rerender(); updateSideCounts(); } }))),
+      h('div', { class: 'muted', style: { fontSize: '14px' }, text: cur.long }),
+      h('div', { class: 'mode-example', text: 'Example: ' + cur.example }));
+  })();
+  body.append(h('div', { class: 'subblock stack', style: { gap: '10px' } },
+    h('div', null, h('h4', { text: 'How are wild Pokemon replaced?' }), h('div', { class: 'faint', style: { fontSize: '13px' }, text: 'Pick one. This is also the on/off switch: with Original, wild Pokemon are not randomized and only the options at the bottom apply.' })),
+    picker, scopeBox));
+
+  const add = (el) => { if (el) body.append(el); };
+  const randomized = mode !== 'ORIGINAL';
+  const sharesAreas = mode === 'SWAP' && ['MAP', 'NAMED_LOCATION', 'GAME'].includes(S.values.wildPokemonZoneMod);
+  const fieldRows = (keys, extraOff) => keys.map(fieldByKey).filter(Boolean).map((f) => {
+    const row = renderField(f, '', rerender);
+    if (extraOff && extraOff(f)) { row.classList.add('dep-off'); row.querySelectorAll('input,select,button').forEach((c) => { c.disabled = true; }); }
+    return row;
+  });
+  const block = (title, desc, rows, note) => !randomized ? null : h('div', { class: 'subblock stack', style: { gap: '10px' } },
+    h('div', null, h('h4', { text: title }), h('div', { class: 'faint', style: { fontSize: '13px' }, text: desc })),
+    h('div', { class: 'stack', style: { gap: '2px' } }, ...rows),
+    note ? h('div', { class: 'now' + (note.on ? ' on' : ''), text: note.text }) : null);
+
+  // 2. split by encounter type + time of day (only meaningful with a shared area)
+  const split = fieldByKey('splitWildZoneByEncounterTypes');
+  if (split || fieldByKey('useTimeBasedEncounters')) {
+    const splitOn = !!S.values.splitWildZoneByEncounterTypes;
+    add(block('Areas', 'What counts as the same place when a species is swapped.',
+      [...fieldRows(['splitWildZoneByEncounterTypes'], () => !sharesAreas), ...fieldRows(['useTimeBasedEncounters'])],
+      { on: randomized && sharesAreas && splitOn, text: !sharesAreas && randomized ? '"Split by encounter types" only has an effect when a species is replaced the same way across a map, place or the whole game.' : (splitOn ? 'A Tentacool you surf into and a Tentacool you fish up are replaced by different Pokemon.' : 'Walking, surfing and fishing share the same swap.') }));
+  }
+
+  // 3. which Pokemon may appear
+  const strength = !!S.values.similarStrengthEncounters;
+  const typeMod = S.values.wildPokemonTypeMod;
+  const evoMod = S.values.wildPokemonEvolutionMod;
+  const filterBits = [];
+  if (strength) filterBits.push('about as strong as the original');
+  if (typeMod === 'RANDOM_THEMES') filterBits.push('one random type per area'); else if (typeMod === 'KEEP_PRIMARY') filterBits.push('same primary type as the original');
+  if (S.values.keepWildTypeThemes) filterBits.push('areas that had a type theme keep it');
+  if (evoMod === 'BASIC_ONLY') filterBits.push('only Pokemon that do not evolve from another'); else if (evoMod === 'KEEP_STAGE') filterBits.push('same evolution stage as the original');
+  if (S.values.keepWildEvolutionFamilies) filterBits.push('evolution families stay together');
+  if (S.values.blockWildLegendaries) filterBits.push('no legendaries');
+  add(block('Which Pokemon may appear', 'Rules that narrow down the new Pokemon. Each one only filters; none of them changes where Pokemon live. They stack: a replacement has to satisfy all that are on, and if nothing fits the rules the closest choice is used.',
+    fieldRows(['similarStrengthEncounters', 'wildPokemonTypeMod', 'keepWildTypeThemes', 'wildPokemonEvolutionMod', 'keepWildEvolutionFamilies', 'blockWildLegendaries', 'allowWildAltFormes']),
+    { on: filterBits.length > 0, text: filterBits.length ? 'Replacements are: ' + filterBits.join('; ') + '.' : 'No filter: any Pokemon of the game can appear anywhere.' }));
+
+  // 4. collecting
+  add(block('Collecting', 'Rules about being able to complete the Pokedex and about low-level routes.',
+    fieldRows(['catchEmAllEncounters', 'balanceShakingGrass']),
+    { on: !!S.values.catchEmAllEncounters, text: S.values.catchEmAllEncounters ? 'Every Pokemon is placed somewhere before any is placed twice (as far as the other rules allow).' : 'The same Pokemon may appear in many places while others appear nowhere.' }));
+
+  // 5. these work with or without randomizing
+  const always = (title, desc, keys) => h('div', { class: 'subblock stack', style: { gap: '10px' } },
+    h('div', null, h('h4', { text: title }), h('div', { class: 'faint', style: { fontSize: '13px' }, text: desc })),
+    h('div', { class: 'stack', style: { gap: '2px' } }, ...fieldRows(keys)));
+  body.append(always('Catch rate', 'Make Pokemon easier to catch. Works with or without randomizing them.', ['useMinimumCatchRate', 'minimumCatchRateLevel']));
+  body.append(always('Held items', 'The items wild Pokemon carry.', ['randomizeWildPokemonHeldItems', 'banBadRandomWildPokemonHeldItems']));
+  body.append(always('Levels', 'Raise or lower the level of every wild Pokemon by a percentage. Works with or without randomizing them.', ['wildLevelsModified', 'wildLevelModifier']));
+  return body;
+}
+
 function renderGroup(g, q) {
   const card = h('div', { class: 'card group' });
   if (isHiddenGroup(g.id)) { card.classList.add('hidden'); return card; }
@@ -897,7 +1052,8 @@ function renderGroup(g, q) {
       if (g.main.type === 'bool') {
         const input = h('input', { type: 'checkbox', 'aria-label': g.title }); input.checked = !!S.values[g.main.key];
         input.addEventListener('change', () => { setVal(g.main.key, input.checked, draw); });
-        head.append(h('label', { class: 'switch' }, input, h('span', { class: 'track' }), h('span', { class: 'thumb' })));
+        // The wild Pokemon group has no switch of its own: its mode picker (Original / random / swap) is the on/off.
+        if (g.id !== 'wild') head.append(h('label', { class: 'switch' }, input, h('span', { class: 'track' }), h('span', { class: 'thumb' })));
       } else {
         const opts = g.main.options;
         if (opts.length <= 5) head.append(segControl(opts, S.values[g.main.key], (v) => setVal(g.main.key, v, draw)));
@@ -912,11 +1068,12 @@ function renderGroup(g, q) {
     card.append(head);
     if (mainHelp) card.append(mainHelp);
     if (visibleFields.length) {
-      const body = h('div', { class: 'group-body' + ((on || q) ? '' : ' collapsed') });
-      if (!q && SUBGROUPS[g.id]) body.append(renderSubgroups(g, draw));
+      const body = h('div', { class: 'group-body' + ((on || q || g.id === 'wild') ? '' : ' collapsed') });
+      if (!q && g.id === 'wild' && g.fields.some((f) => f.key === 'wildPokemonZoneMod')) body.append(renderWildBlocks(g, draw));
+      else if (!q && SUBGROUPS[g.id]) body.append(renderSubgroups(g, draw));
       else visibleFields.forEach((f) => body.append(renderField(f, q, draw)));
       card.append(body);
-      if (!on && !q) card.append(h('div', { class: 'faint', style: { marginTop: '8px', fontSize: '13px' }, text: g.main && g.main.type === 'bool' ? 'Turn this on to see its options.' : 'Choose something other than "' + g.main.options[0].label + '" to see its options.' }));
+      if (!on && !q && g.id !== 'wild') card.append(h('div', { class: 'faint', style: { marginTop: '8px', fontSize: '13px' }, text: g.main && g.main.type === 'bool' ? 'Turn this on to see its options.' : 'Choose something other than "' + g.main.options[0].label + '" to see its options.' }));
     }
   };
   draw();
@@ -975,10 +1132,10 @@ function renderRandomizer() {
 // out of every section on purpose (hidden from the web UI for this release, see buildYaoCards()).
 function yaoCardsForSection(id, cards) {
   switch (id) {
-    case 'pokemon': return [cards.boostCard, cards.statEditCard, cards.evoCard, cards.fullEvoCard, cards.evoScaleCard];
+    case 'pokemon': return [cards.boostCard, cards.statEditCard, cards.evoCard, cards.fullEvoCard, cards.stoneLevelCard, cards.evoScaleCard];
     case 'wild': return [cards.shinyCard, cards.eggCard];
     case 'items': return [cards.shopCard];
-    case 'trainers': return [cards.battleRulesCard, cards.megaCard];
+    case 'trainers': return [cards.itemsCard, cards.battleRulesCard, cards.megaCard];
     case 'gamemodes': return [cards.lockeCard];
     default: return [];
   }
@@ -1014,7 +1171,7 @@ function renderPokemonSection(content, sec, byId, yaoCards) {
     // both change WHEN Pokemon evolve, and the two silently stack (see the comment on evoScaleCard above), so
     // they are grouped under one heading the same way "Base Stats" groups base-stat controls above.
     if (g.id === 'evoeasier') {
-      const pieces = [byId.evoeasier, yaoCards.fullEvoCard, yaoCards.evoScaleCard].filter(visible);
+      const pieces = [byId.evoeasier, yaoCards.fullEvoCard, yaoCards.stoneLevelCard, yaoCards.evoScaleCard].filter(visible);
       if (pieces.length) { content.append(h('div', { class: 'family' }, h('h3', { class: 'family-title', text: 'Evolution timing' }), ...pieces)); shown += pieces.length; }
       continue;
     }
@@ -1175,20 +1332,24 @@ function slider({ min, max, step, value, onInput, onCommit, format, numberInput,
   const input = h('input', { type: 'range', min, max, step, value, disabled: !!disabled });
   const fill = () => input.style.setProperty('--fill', ((input.value - min) / (max - min) * 100) + '%');
   fill();
-  const setValue = (v) => { input.value = v; if (out) out.textContent = format(v); fill(); if (numField) numField.value = v; };
+  const setValue = (v, fromTyping) => { input.value = v; if (out) out.textContent = format(v); fill(); if (numField && !fromTyping) numField.value = v; };
   input.addEventListener('input', () => { const v = Number(input.value); setValue(v); onInput(v); });
   if (onCommit) input.addEventListener('change', () => onCommit(Number(input.value)));
   let numField = null;
   if (numberInput) {
-    numField = h('input', { type: 'number', min, max, step, value, disabled: !!disabled, 'aria-label': 'Exact value', style: { width: '76px', flex: 'none' } });
+    // Fixed (13/10/2026, web UI feedback): this was type=number, which refuses or rewrites partial decimals such
+    // as ".3" or "0," while typing (and depends on the keyboard locale). A text field with a decimal keyboard hint
+    // accepts both "." and "," and is never rewritten while the user is typing; it is tidied on Enter or blur.
+    numField = h('input', { type: 'text', inputmode: 'decimal', value, disabled: !!disabled, 'aria-label': 'Exact value', style: { width: '76px', flex: 'none' } });
     numField.addEventListener('input', () => {
-      if (numField.value === '') return;
-      let v = Number(numField.value);
+      const raw = numField.value.trim().replace(',', '.');
+      if (raw === '' || raw === '.') return;
+      let v = Number(raw);
       if (Number.isNaN(v)) return;
       v = clamp(v, min, max);
       if (step) v = Math.round(v / step) * step;
       v = Math.round(v * 1000) / 1000;
-      setValue(v);
+      setValue(v, true);
       onInput(v);
     });
     // a typed value is only committed (and the caller's card redrawn) on Enter or when the field loses focus, so
@@ -1323,13 +1484,25 @@ function buildYaoCards() {
       ['gymLeaders', 'Gym leaders'], ['league', 'Elite Four and Champion'], ['evilBosses', 'Evil-team bosses'],
       ['otherBosses', 'Other bosses (rivals, strong admins)'], ['everyone', 'Every trainer'],
     ];
+    // Fixed (13/10/2026, web UI feedback): the quick-pick buttons below used to show and set each boss's level as
+    // read straight off the unmodified ROM, with a disclaimer that it was "approximate" when trainer level scaling
+    // was on. The backend's own fromLevel check (MegaFinaleApplier) compares against the trainer's FINAL level, after
+    // scaling, so the buttons now apply the exact same formula (Randomizer.applyPercentageLevelModifier: round(level
+    // * (1 + percent / 100)), clamped to 1-100) the trainer randomizer itself uses, so clicking "Gym 3" sets the real
+    // post-scaling threshold instead of the vanilla one.
+    const scaledLevel = (level) => S.values.trainersLevelModified
+      ? Math.min(100, Math.max(1, Math.round(level * (1 + (S.values.trainersLevelModifier || 0) / 100))))
+      : level;
     const draw = () => {
       const progress = S.progress || [];
       const on = megaAny(m);
       const levelLbl = h('span', { class: 'faint', style: { fontSize: '13px' }, text: m.fromLevel ? 'Only trainers whose strongest Pokemon is level ' + m.fromLevel + ' or higher.' : 'From the start of the game.' });
       const bossButtons = progress.length ? h('div', { class: 'row wrap' }, h('span', { class: 'faint', style: { fontSize: '13px' }, text: 'Start from:' }),
         h('button', { class: 'chip' + (m.fromLevel === 0 ? ' on' : ''), type: 'button', text: 'The start', onclick: () => { m.fromLevel = 0; save(); draw(); } }),
-        ...progress.filter((it) => it.tier === 'gym' || it.tier === 'league').map((it, i) => h('button', { class: 'chip' + (m.fromLevel === it.level ? ' on' : ''), type: 'button', title: it.name, text: (it.tier === 'gym' ? 'Gym ' + (progress.filter((x) => x.tier === 'gym').indexOf(it) + 1) : it.name) + ' (Lv ' + it.level + ')', onclick: () => { m.fromLevel = it.level; save(); draw(); } }))) : null;
+        ...progress.filter((it) => it.tier === 'gym' || it.tier === 'league').map((it, i) => {
+          const lvl = scaledLevel(it.level);
+          return h('button', { class: 'chip' + (m.fromLevel === lvl ? ' on' : ''), type: 'button', title: it.name, text: (it.tier === 'gym' ? 'Gym ' + (progress.filter((x) => x.tier === 'gym').indexOf(it) + 1) : it.name) + ' (Lv ' + lvl + ')', onclick: () => { m.fromLevel = lvl; save(); draw(); } });
+        })) : null;
       box.replaceChildren(
         h('div', { class: 'row wrap' }, ...TIERS.map(([k, label]) => h('button', { class: 'chip' + (m[k] ? ' on' : ''), type: 'button', text: label, onclick: () => { m[k] = !m[k]; save(); draw(); } }))),
         h('div', { class: 'muted', style: { fontSize: '14px' }, text: on
@@ -1341,7 +1514,7 @@ function buildYaoCards() {
             slider({ min: 0, max: 100, step: 1, value: m.fromLevel, format: (v) => String(v), numberInput: true, onInput: (v) => { m.fromLevel = v; save(); levelLbl.textContent = v ? 'Only trainers whose strongest Pokemon is level ' + v + ' or higher.' : 'From the start of the game.'; }, onCommit: () => draw() }),
             levelLbl),
           bossButtons,
-          h('div', { class: 'faint', style: { fontSize: '13px' }, text: 'The level is the trainer\'s strongest Pokemon after all other changes (including trainer level scaling), so "from gym 3" is approximate if you scale levels. The Gym buttons show the original game\'s levels.' })) : null);
+          h('div', { class: 'faint', style: { fontSize: '13px' }, text: 'The level is the trainer\'s strongest Pokemon after all other changes (including trainer level scaling). The Gym buttons already account for your current trainer level scaling setting.' })) : null);
     };
     draw();
     if (f.megas && !S.progress) {
@@ -1351,6 +1524,27 @@ function buildYaoCards() {
   })();
 
   // --- battle style rules
+  // Added (13/10/2026, web UI feedback item 49): the battle items a trainer's AI uses (Potion, Full Restore...), which
+  // the original randomizer never touched, so an ordinary trainer on an early route could heal with a Full Restore.
+  const itemsCard = (() => {
+    const box = h('div', { class: 'stack' });
+    const draw = () => {
+      const tiered = y.trainerItems !== 'unchanged';
+      box.replaceChildren(
+        segControl([{ value: 'tiered', label: 'Limit by tier and stage' }, { value: 'unchanged', label: 'Keep the game\'s own' }], y.trainerItems, (v) => { y.trainerItems = v; save(); draw(); }, false),
+        h('div', { class: 'muted', style: { fontSize: '14px' }, text: tiered ? 'Items trainers use during a battle are limited so early fights stay fair. Items are only ever lowered or removed, never added.' : 'Trainers keep whatever the game gave them.' }),
+        tiered ? h('div', { class: 'stack', style: { gap: '6px' } },
+          h('div', { class: 'faint', style: { fontSize: '13px' }, text: 'Ordinary trainers: no items (unless you allow Potions below). Gym leaders: only the potion that fits the stage of the game, Potion before level 20, Super Potion before 35, Hyper Potion before 50, then Max Potion, and never Full Restore. Elite Four and Champion: Full Restore from level 35. Evil-team bosses, rivals and other bosses: Full Restore from level 45, potions before that. Full Heal and X items only for bosses from level 30 (gym leaders from 40). Revives are removed for everybody. The stage is the highest level in the trainer\'s team.' }),
+          (() => { const i = h('input', { type: 'checkbox', 'aria-label': 'Ordinary trainers keep Potions' }); i.checked = !!y.regularTrainersKeepItems; i.addEventListener('change', () => { y.regularTrainersKeepItems = i.checked; save(); });
+            return h('div', { class: 'opt' }, h('div', { class: 'name' }, h('span', { class: 't', text: 'Ordinary trainers may keep Potion and Super Potion' }), infoButton('Off by default: ordinary trainers use no items at all. On: they keep a Potion or Super Potion (never more, and cheap status cures), so long routes are a little less predictable.')), h('label', { class: 'switch' }, i, h('span', { class: 'track' }), h('span', { class: 'thumb' }))); })()) : null);
+    };
+    draw();
+    const avail = f.trainerItems !== false;
+    return h('div', { class: 'card stack' + (avail ? '' : ' card-disabled') },
+      sectionHead('Trainer battle items', 'The Potions, Full Restores and other items trainers use mid-battle.', avail ? null : h('span', { class: 'pill warn', text: 'Not for this game' })),
+      avail ? box : h('div', { class: 'notice', text: 'This game does not store battle items for trainers in a way the program can change (Gen 1 and 2), so nothing is changed.' }));
+  })();
+
   // Added (12/10/2026, web UI feedback round 3): the native "Trainer battle style" only applies one style to every
   // trainer. These rules say, for a group of trainers, "this percent of them fight as a double battle (or
   // triple / rotation)", for example 10% of gym leaders and bosses. They run after the native setting.
@@ -1359,7 +1553,7 @@ function buildYaoCards() {
     const styles = f.battleStyles || [];
     const available = styles.length > 0;
     const STYLE_LABEL = { DOUBLE: 'Double battle', TRIPLE: 'Triple battle', ROTATION: 'Rotation battle' };
-    const GROUPS = [['gymLeaders', 'Gym leaders'], ['league', 'Elite Four and Champion'], ['evilBosses', 'Evil-team bosses'], ['otherBosses', 'Other bosses (rivals, strong admins)'], ['everyone', 'Every trainer']];
+    const GROUPS = [['gymLeaders', 'Gym leaders'], ['league', 'Elite Four and Champion'], ['evilBosses', 'Evil-team bosses'], ['otherBosses', 'Other bosses (rivals, strong admins)'], ['everyone', 'Every trainer (all, including bosses)']];
     const draw = () => {
       const rules = y.battleStyleRules;
       const rows = rules.map((r, i) => {
@@ -1378,7 +1572,7 @@ function buildYaoCards() {
       box.replaceChildren(
         rows.length ? h('div', { class: 'stack' }, ...rows) : h('div', { class: 'muted', text: 'No rules. Add one, for example "10% of gym leaders fight as a double battle".' }),
         h('div', null, h('button', { class: 'btn small', type: 'button', disabled: rules.length >= 8, onclick: () => { rules.push({ group: 'gymLeaders', style: styles[0], chance: 10 }); save(); draw(); } }, icon('plus'), 'Add a rule')),
-        h('div', { class: 'faint', style: { fontSize: '13px' }, text: 'Rules run after "Trainer battle style" above. Each trainer is checked against the rules from top to bottom, and the first rule that matches and succeeds decides its style. A double battle with a one-Pokemon team repeats that Pokemon, which can cause problems in some games (see the battle style tooltip). Not available in Gen 1 and 2.' }));
+        h('div', { class: 'faint', style: { fontSize: '13px' }, text: 'Rules run after "Trainer battle style" above. Each trainer is checked against the rules from top to bottom, and the first rule that matches and succeeds decides its style. The chance is per trainer: 10% means each individual trainer in the group has a 10% chance of fighting as a double, so a gym with 5 trainers has roughly a 41% chance of containing at least one double. "Every trainer" matches all trainers in the game, including bosses. A double battle with a one-Pokemon team repeats that Pokemon. Not available in Gen 1 and 2.' }));
     };
     draw();
     return h('div', { class: 'card stack' + (available ? '' : ' card-disabled') }, sectionHead('Battle style chances', 'Make some trainers fight as double (or triple, rotation) battles by chance.', available ? h('span', { class: 'pill ok', text: 'Available for this game' }) : h('span', { class: 'pill bad', text: 'Not for this game' })), available ? box : h('div', { class: 'notice', text: 'This game has no battle styles other than single battles.' }));
@@ -1392,7 +1586,7 @@ function buildYaoCards() {
     const sp = y.playerSprites;
     const field = (label, key) => {
       const input = h('input', { type: 'text', value: sp[key], placeholder: 'Path of a sprite sheet (PNG)', 'aria-label': label, oninput: (e) => { sp[key] = e.target.value; save(); } });
-      return h('div', null, h('label', { class: 'field', text: label }), h('div', { class: 'row' }, input, h('button', { class: 'btn', type: 'button', onclick: () => nativeBrowse({ mode: 'open', filter: 'png', startDir: (sp[key] || S.rom.path).replace(/[\\/][^\\/]*$/, ''), title: 'Choose a sprite sheet (PNG)', onPick: (p) => { sp[key] = p; input.value = p; save(); } }) }, icon('folder'), 'Browse')));
+      return h('div', null, h('label', { class: 'field', text: label }), h('div', { class: 'row' }, input, h('button', { class: 'btn', type: 'button', onclick: () => nativeBrowse({ mode: 'open', filter: 'png', startDir: (sp[key] || S.rom.path).replace(/[\\/][^\\/]*$/, ''), title: 'Choose a sprite sheet (PNG)', onPick: (p) => { sp[key] = p; input.value = p; showPathEnd(input); save(); } }) }, icon('folder'), 'Browse')));
     };
     const draw = () => {
       box.replaceChildren(
@@ -1437,26 +1631,36 @@ function buildYaoCards() {
         i.addEventListener('change', () => { y.boostFloor = i.checked ? (S.floorMemory || 450) : 0; save(); draw(); });
         return h('label', { class: 'switch' }, i, h('span', { class: 'track' }), h('span', { class: 'thumb' }));
       })();
-      const parts = [h('div', { class: 'opt' }, h('div', { class: 'name' }, h('span', { class: 't', text: 'Raise weak, fully evolved Pokemon' }),
-        infoButton('Every Pokemon with nothing left to evolve into and a base stat total below the number you choose is lifted to that total. The extra points are spread over its six stats in the proportions it already has (a fast Pokemon stays fast), no stat is ever lowered, and each stat stays within the game\'s own limit.')), sw)];
+      const parts = [h('div', { class: 'opt' }, h('div', { class: 'name' }, h('span', { class: 't', text: 'Boost weak, fully evolved Pokemon' }),
+        infoButton('Every Pokemon with nothing left to evolve into and a base stat total below the number you choose counts as weak. You pick how they are boosted: up to that total, or by a percentage of their own total. The extra points are spread over its six stats in the proportions it already has (a fast Pokemon stays fast), no stat is ever lowered, and each stat stays within the game\'s own limit.')), sw)];
       if (on) {
         const impact = h('div', { class: 'faint', style: { fontSize: '13px' } });
         const refreshImpact = () => {
           const finals = S.species.filter((p) => p.bs && p.final !== false);
           const sum = (p) => p.bs.hp + p.bs.attack + p.bs.defense + p.bs.spatk + p.bs.spdef + p.bs.speed;
-          const below = finals.filter((p) => sum(p) < y.boostFloor);
+          const weak = finals.filter((p) => sum(p) < y.boostFloor);
           if (!finals.length) { impact.textContent = ''; return; }
-          const gains = below.map((p) => y.boostFloor - sum(p));
-          impact.textContent = below.length
-            ? 'In this game, about ' + below.length + ' of ' + finals.length + ' fully evolved Pokemon are below ' + y.boostFloor + ' and would be lifted, gaining ' + Math.round(gains.reduce((a, c) => a + c, 0) / gains.length) + ' points on average (up to ' + Math.max(...gains) + '). Pokemon that still have an evolution ahead of them are never touched.'
-            : 'No fully evolved Pokemon in this game is below ' + y.boostFloor + ', so this would change nothing. Choose a higher total.';
+          if (!weak.length) { impact.textContent = 'No fully evolved Pokemon in this game is below ' + y.boostFloor + ', so this would change nothing. Choose a higher total.'; return; }
+          const before = weak.map(sum);
+          const next = weak.map((b) => (y.boostPercent > 0 ? Math.min(1530, Math.round(sum(b) * (1 + y.boostPercent / 100))) : y.boostFloor));
+          const avg = (a) => Math.round(a.reduce((x, c) => x + c, 0) / a.length);
+          impact.textContent = 'In this game, ' + weak.length + ' of ' + finals.length + ' fully evolved Pokemon are below ' + y.boostFloor + ' and count as weak. Their average total goes from ' + avg(before) + ' to about ' + avg(next) + ' (weakest ' + Math.min(...before) + ' to about ' + Math.min(...next) + ', strongest of them ' + Math.max(...before) + ' to about ' + Math.max(...next) + '). Pokemon that still have an evolution ahead of them, and Pokemon at or above ' + y.boostFloor + ', are never touched. No stat goes above the game\'s limit.';
         };
+        const pct = y.boostPercent > 0;
+        const pctControls = pct ? h('div', { class: 'stack', style: { gap: '8px' } },
+          h('label', { class: 'field', text: 'Boost each weak Pokemon by (drag, or type an exact number)' }),
+          slider({ min: 1, max: 100, step: 1, value: y.boostPercent, format: (v) => v + '%', numberInput: true, onInput: (v) => { y.boostPercent = v; S.percentMemory = v; save(); refreshImpact(); } }),
+          h('div', { class: 'row wrap' }, h('span', { class: 'faint', style: { fontSize: '13px' }, text: 'Quick picks:' }),
+            ...[10, 20, 30, 50].map((n) => h('button', { class: 'chip' + (y.boostPercent === n ? ' on' : ''), type: 'button', text: n + '%', onclick: () => { y.boostPercent = n; S.percentMemory = n; save(); draw(); } })))) : null;
         refreshImpact();
         parts.push(
-          h('label', { class: 'field', text: 'Minimum base stat total (drag, or type an exact number)' }),
+          h('label', { class: 'field', text: 'A fully evolved Pokemon is weak when its base stat total is below (drag, or type an exact number)' }),
           slider({ min: 100, max: FLOOR_MAX, step: 5, value: y.boostFloor, format: (v) => String(v), numberInput: true, onInput: (v) => { y.boostFloor = v; S.floorMemory = v; save(); refreshImpact(); } }),
           h('div', { class: 'row wrap' }, h('span', { class: 'faint', style: { fontSize: '13px' }, text: 'Quick picks:' }),
             ...[400, 450, 500, 550, 600].map((n) => h('button', { class: 'chip' + (y.boostFloor === n ? ' on' : ''), type: 'button', text: String(n), onclick: () => { y.boostFloor = n; S.floorMemory = n; save(); draw(); } }))),
+          h('label', { class: 'field', text: 'How much are they boosted?' }),
+          segControl([{ value: 'floor', label: 'Up to that total' }, { value: 'percent', label: 'By a percentage' }], pct ? 'percent' : 'floor', (v) => { y.boostPercent = v === 'percent' ? (S.percentMemory || 20) : 0; save(); draw(); }, false),
+          pctControls,
           impact);
       } else {
         parts.push(h('div', { class: 'faint', style: { fontSize: '13px' }, text: 'Off: no Pokemon is touched by this automatic rule. To raise or lower one chosen Pokemon\'s stats, use the per-Pokemon stat editor below.' }));
@@ -1464,7 +1668,7 @@ function buildYaoCards() {
       box.replaceChildren(...parts);
     };
     draw();
-    return h('div', { class: 'card stack' }, sectionHead('Automatic stat floor', 'Raise every fully evolved Pokemon\'s base stats in bulk up to a minimum total. To boost one chosen Pokemon instead, use the per-Pokemon stat editor below.'), box);
+    return h('div', { class: 'card stack' }, sectionHead('Automatic stat boost', 'Boost the weak, fully evolved Pokemon in bulk: raise them to a minimum total, or by a percentage you choose. To boost one chosen Pokemon instead, use the per-Pokemon stat editor below.'), box);
   })();
 
   // --- per-species stat editor
@@ -1599,6 +1803,21 @@ function buildYaoCards() {
     return h('div', { class: 'card stack' }, sectionHead('Fully evolved by a level', 'Pull late evolutions earlier so everything reaches its final stage by a level you choose.'), box);
   })();
 
+  // --- stone evolutions also by level (Phase 19, 13/10/2026)
+  const stoneLevelCard = (() => {
+    const i = h('input', { type: 'checkbox', 'aria-label': 'Stone evolutions can also be reached by leveling' });
+    i.checked = !!y.stoneEvolutionsAlsoLevel;
+    const tip = 'A Pokemon that has exactly one evolution, and gets it with a stone (Vulpix, Growlithe, Pikachu, Shellder, Staryu...), will also evolve by leveling, at a level worked out from how similar Pokemon evolve. The stone keeps working. Pokemon with several evolutions (Eevee, Gloom, Poliwhirl...) and anything you set yourself in the evolution editor are left exactly as they are. Not available in Gen 1 and 2, whose games cannot store a second evolution.';
+    i.addEventListener('change', () => { y.stoneEvolutionsAlsoLevel = i.checked; save(); });
+    const gen12 = S.rom.generation <= 2;
+    return h('div', { class: 'card stack' + (gen12 ? ' card-disabled' : '') },
+      sectionHead('Stone evolutions by leveling', 'Pokemon with a single stone evolution can also evolve by leveling.'),
+      h('div', { class: 'opt' }, h('div', { class: 'name' }, h('span', { class: 't', text: 'Stone evolutions can also be reached by leveling' }), infoButton(tip)),
+        h('label', { class: 'switch' }, i, h('span', { class: 'track' }), h('span', { class: 'thumb' }))),
+      gen12 ? h('div', { class: 'notice', text: 'This game cannot store a second evolution for a Pokemon, so the setting is ignored here.' })
+        : h('div', { class: 'faint', style: { fontSize: '13px' }, text: 'Only Pokemon with exactly one evolution are changed. The level follows "Fully evolved by" and "Make Evolutions Easier" when those are on, and the evolution level scale below.' }));
+  })();
+
   // --- evolution level scale
   // Moved out of evoCard and given its own explicit toggle (11/10/2026, web UI feedback item 28). It used to be
   // a bare slider with no visible on/off state (0% silently meant "off"), and it lived at the bottom of the
@@ -1644,7 +1863,7 @@ function buildYaoCards() {
   // The underlying feature (DsPlayerSprites, the CLI's --player-sprite and --player-sprite-female flags,
   // /api/player-sprites/export) is untouched and still usable from the CLI. Do not expose spriteCard anywhere
   // in this interface without checking with the user first.
-  return { shinyCard, lockeCard, eggCard, shopCard, boostCard, statEditCard, evoCard, fullEvoCard, evoScaleCard, megaCard, battleRulesCard };
+  return { shinyCard, lockeCard, eggCard, shopCard, boostCard, statEditCard, evoCard, fullEvoCard, stoneLevelCard, evoScaleCard, megaCard, battleRulesCard, itemsCard };
 }
 
 // ------------------------------------------------------------------ view 4: run
@@ -1669,7 +1888,13 @@ function renderRun() {
   }
   S.run.nameHint = defaultOutputName();
   const outInput = h('input', { type: 'text', value: S.run.output, 'aria-label': 'Where to save', oninput: (e) => { S.run.output = e.target.value; } });
-  const seedInput = h('input', { type: 'text', value: S.run.seed, placeholder: 'Leave empty for a random seed', 'aria-label': 'Seed', oninput: (e) => { S.run.seed = e.target.value; persist(); } });
+  // Changed (13/10/2026, web UI feedback): the seed is never empty. A fresh random one is shown every time this
+  // screen loads (so what is shown is exactly what will be used), editable, with a dice button to roll another.
+  const newSeed = () => String(Math.floor(Math.random() * 9e14) + 1e14);
+  S.run.seed = newSeed();
+  setTimeout(() => showPathEnd(outInput), 0);
+  const seedInput = h('input', { type: 'text', value: S.run.seed, inputmode: 'numeric', 'aria-label': 'Seed', oninput: (e) => { S.run.seed = e.target.value; persist(); } });
+    const rerollBtn = h('button', { class: 'btn', type: 'button', title: 'Roll a new random seed', 'aria-label': 'Roll a new random seed', style: { flex: 'none', padding: '0 12px' }, onclick: () => { S.run.seed = newSeed(); seedInput.value = S.run.seed; persist(); } }, icon('dice'));
   const toggle = (label, tipText, key) => {
     const i = h('input', { type: 'checkbox' }); i.checked = S.run[key];
     i.addEventListener('change', () => { S.run[key] = i.checked; persist(); });
@@ -1694,10 +1919,10 @@ function renderRun() {
     h('div', { class: 'grid two', style: { marginTop: '16px' } },
       h('div', { class: 'card stack' },
         h('h3', { text: g.threeDs ? 'Save the randomized game in this folder' : 'Save the randomized game as' }),
-        h('div', { class: 'row' }, outInput, h('button', { class: 'btn', onclick: () => nativeBrowse({ mode: 'save', startDir: S.run.output.replace(/[\\/][^\\/]*$/, ''), title: 'Choose where to save', onPick: (p) => { S.run.output = p; outInput.value = p; } }) }, icon('folder'), 'Browse')),
+        h('div', { class: 'row' }, outInput, h('button', { class: 'btn', style: { flex: 'none', whiteSpace: 'nowrap' }, onclick: () => nativeBrowse({ mode: 'folder', startDir: S.run.output.replace(/[\\/][^\\/]*$/, ''), title: 'Choose the folder to save the randomized game in', onPick: (p) => { const sep = p.includes('\\') ? '\\' : '/'; S.run.output = p.replace(/[\\/]+$/, '') + sep + defaultOutputName(); outInput.value = S.run.output; showPathEnd(outInput); } }) }, icon('folder'), 'Choose folder')),
         g.threeDs ? threeDsFormatPicker(outInput) : null,
         h('div', { class: 'faint', style: { fontSize: '13px' }, text: g.threeDs ? 'You can type just a name or a folder. The right extension or folder layout is added for you, and your original game is never replaced.' : 'You can type just a name. The right extension (.' + g.extension + ') is added for you, and your original game is never replaced.' }),
-        h('div', null, h('label', { class: 'field', text: 'Seed' }), seedInput),
+        h('div', null, h('label', { class: 'field', text: 'Seed' }), h('div', { class: 'row', style: { alignItems: 'stretch' } }, seedInput, rerollBtn)),
         toggle('Save a detailed log next to the game', 'The log lists everything that was randomized and the notes about the extras.', 'log'),
         toggle('Also write a guide to the randomized game (HTML)', 'A page with every change, spoiler-safe until you reveal it. It reveals the whole game, so it can be cheating if you compete against someone.', 'guide'),
       ),
@@ -1800,7 +2025,7 @@ function showResult(r, job) {
     box.replaceChildren(h('div', { class: 'card stack' }, h('h2', { text: 'Done in ' + r.seconds + (r.seconds === 1 ? ' second' : ' seconds') }),
       h('div', { class: 'mono', style: { overflowWrap: 'anywhere' }, text: job.output }),
       h('div', { class: 'row wrap' },
-        r.guide ? h('button', { class: 'btn primary', onclick: () => openGuide(job.id), text: 'Open the guide' }) : null,
+        h('button', { class: 'btn primary', onclick: () => openFolder(job.id), text: 'Go to the folder' }),
         h('button', { class: 'btn', onclick: () => { navigator.clipboard && navigator.clipboard.writeText(job.output).then(() => toast('Path copied.', 'ok')); }, text: 'Copy the path' }),
         h('button', { class: 'btn', onclick: () => { S.run.output = ''; S.run.seed = ''; renderRun(); }, text: 'Randomize again' }),
         h('button', { class: 'btn ghost', onclick: () => { S.rom = null; enableSteps(); go('game'); }, text: 'Choose another game' })),
@@ -1813,13 +2038,32 @@ function showResult(r, job) {
   }
 }
 
+// Added (13/10/2026, web UI feedback): replaces the "Open the guide" button (a blob tab the browser kept blocking).
+// The server opens the folder holding the game, the log and the guide in the OS file manager.
+// Updated (14/10/2026): shows a brief toast with the resolved path so the user can confirm where it opened.
+async function openFolder(id) {
+  try {
+    const r = await api('/api/job/open-folder', { id });
+    if (r && r.path) toast('Opened: ' + r.path, 'ok', 4000);
+  } catch (e) { toast(e.message, 'bad', 8000); }
+}
+
 async function openGuide(id) {
+  // Fixed (13/10/2026, web UI feedback): window.open() called after an await is no longer "a direct result of a
+  // click" as far as most browsers are concerned, so it was silently popup-blocked (or opened a dead blank tab)
+  // instead of the guide. Opening the tab synchronously, inside the click handler, and only navigating it once
+  // the fetch resolves keeps it within that same trusted click, so it is never blocked.
+  const tab = window.open('', '_blank');
   try {
     const res = await fetch('/api/job/guide?id=' + encodeURIComponent(id), { headers: { 'X-YAO-Token': TOKEN } });
     if (!res.ok) throw new Error('The guide is not available.');
     const blob = new Blob([await res.text()], { type: 'text/html' });
-    window.open(URL.createObjectURL(blob), '_blank');
-  } catch (e) { toast(e.message, 'bad'); }
+    const url = URL.createObjectURL(blob);
+    if (tab) { tab.location.replace(url); } else { window.open(url, '_blank'); }
+  } catch (e) {
+    if (tab) tab.close();
+    toast(e.message, 'bad');
+  }
 }
 
 // ------------------------------------------------------------------ start

@@ -2745,6 +2745,12 @@ public class Gen4RomHandler extends AbstractDSRomHandler {
                 boolean readItems = (trainer[0] & 2) != 0;
                 tr.setTrainerclass(trainerClasses.get(trainer[1] & 0xFF));
                 tr.setIndex(i);
+                // Added for YAO (13/10/2026): the 4 battle item slots (bytes 4 to 11).
+                int[] battleItems = new int[4];
+                for (int slot = 0; slot < 4; slot++) {
+                    battleItems[slot] = readWord(trainer, 4 + slot * 2);
+                }
+                tr.setBattleItems(battleItems);
                 int numPokes = trainer[3] & 0xFF;
                 int battleStyle = trainer[16] & 0xFF;
                 if (battleStyle != 0)
@@ -2871,6 +2877,12 @@ public class Gen4RomHandler extends AbstractDSRomHandler {
 				Trainer tr = allTrainers.next();
 				// preserve original poketype
 				trainer[0] = (byte) tr.getPoketype();
+				// Added for YAO (13/10/2026): write the 4 battle item slots back.
+				if (tr.getBattleItems() != null) {
+				    for (int slot = 0; slot < 4; slot++) {
+				        writeWord(trainer, 4 + slot * 2, tr.getBattleItems()[slot]);
+				    }
+				}
 				int numPokes = tr.getPokemon().size();
 				trainer[3] = (byte) numPokes;
 
@@ -5913,6 +5925,11 @@ public class Gen4RomHandler extends AbstractDSRomHandler {
 	public Set<Item> getAllHeldItems() {
 		return itemIdsToSet(Gen4Constants.allHeldItems);
 	}
+
+    @Override
+    public boolean canChangeTrainerBattleItems() {
+        return true;
+    }
 
 	@Override
 	public List<Item> getSensibleHeldItemsFor(TrainerPokemon tp, boolean consumableOnly, List<Move> moves,

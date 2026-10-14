@@ -114,6 +114,9 @@ public class Trainer implements Comparable<Trainer> {
     private int forceStarterPosition = -1;
     // Certain trainers (e.g., trainers in the PWT in BW2) require unique held items for all of their Pokemon to prevent a game crash.
     private boolean requiresUniqueHeldItems;
+    // Added for YAO (13/10/2026): the up to four battle items (Potion, Full Restore, X Attack...) the trainer's AI may
+    // use, as item ids in the same numbering as the held items. Null when the game's handler does not read them.
+    private int[] battleItems;
     private BattleStyle currBattleStyle = new BattleStyle(); // Defaults to "Unchanged", but need this per-trainer for the Random style option.
 
     public Trainer() { }
@@ -134,6 +137,16 @@ public class Trainer implements Comparable<Trainer> {
         this.forceStarterPosition = original.forceStarterPosition;
         this.requiresUniqueHeldItems = original.requiresUniqueHeldItems;
         this.currBattleStyle = original.currBattleStyle;
+        this.battleItems = original.battleItems == null ? null : original.battleItems.clone();
+    }
+
+    /** Added for YAO (13/10/2026). The 4 battle item slots (0 = empty), or null if this game's data is not read. */
+    public int[] getBattleItems() {
+        return battleItems;
+    }
+
+    public void setBattleItems(int[] battleItems) {
+        this.battleItems = battleItems;
     }
 
     @Override

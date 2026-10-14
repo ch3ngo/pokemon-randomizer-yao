@@ -52,6 +52,7 @@ public class CliRandomizer {
                                                       List<String> shopItemArguments, String htmlGuidePath,
                                                       List<String> protectShopItemArguments,
                                                       String boostFloorArgument,
+                                                      String boostPercentArgument,
                                                       List<String> evolutionArguments,
                                                       List<String> removeEvolutionArguments,
                                                       String evolutionScaleArgument,
@@ -114,6 +115,9 @@ public class CliRandomizer {
                         new java.util.ArrayList<>(romHandler.getSpeciesSetInclFormes());
                 if (boostFloorArgument != null) {
                     EditArguments.applyFloor(settings.getYaoSettings(), boostFloorArgument);
+                }
+                if (boostPercentArgument != null) {
+                    EditArguments.applyPercent(settings.getYaoSettings(), boostPercentArgument);
                 }
                 if (!removeEvolutionArguments.isEmpty()) {
                     EditArguments.applyRemovals(settings.getYaoSettings(), speciesList, removeEvolutionArguments);
@@ -359,6 +363,7 @@ public class CliRandomizer {
         List<String> evolutionArguments = new ArrayList<>();
         List<String> removeEvolutionArguments = new ArrayList<>();
         String boostFloorArgument = null;
+        String boostPercentArgument = null;
         String evolutionScaleArgument = null;
         List<String> statEditArguments = new ArrayList<>();
         String eggBoxArgument = null;
@@ -374,15 +379,19 @@ public class CliRandomizer {
         String megaFromLevelArgument = null;
         List<String> battleStyleRuleArguments = new ArrayList<>();
         String fullyEvolvedArgument = null;
+        String trainerItemsArgument = null;
+        boolean regularTrainerItems = false;
+        boolean noIncrementalMovesets = false;
+        boolean stoneEvolutionsAlsoLevel = false;
         boolean eggDuplicates = false;
 
         List<String> allowedFlags = Arrays.asList("-i", "-o", "-s", "-S", "-z", "-c", "-d", "-u", "-l", "-h", "--help",
                 "--shop-item", "--shiny-chance", "--accept-code-patches", "--html-guide", "--locke",
-                "--keep-basic-shop-items", "--protect-shop-item", "--boost-floor", "--evolution",
+                "--keep-basic-shop-items", "--protect-shop-item", "--boost-floor", "--boost-percent", "--evolution",
                 "--remove-evolution", "--evolution-level-scale", "--stat-edit", "--egg-box", "--egg-legendary", "--egg-stages",
                 "--egg-basic-only", "--egg-duplicates", "--mega-finale", "--mega-finale-replace",
                 "--mega-finale-evil-bosses", "--mega-from-level", "--battle-style-rule",
-                "--fully-evolved-by-level", "--player-sprite", "--player-sprite-female", "--export-player-sprites");
+                "--fully-evolved-by-level", "--trainer-items", "--regular-trainers-keep-items", "--stone-evolutions-level", "--no-incremental-movesets", "--player-sprite", "--player-sprite-female", "--export-player-sprites");
         for (int i = 0; i < args.length; i++) {
             if (allowedFlags.contains(args[i])) {
                 switch (args[i]) {
@@ -417,12 +426,14 @@ public class CliRandomizer {
                     case "--evolution":
                     case "--remove-evolution":
                     case "--boost-floor":
+                    case "--boost-percent":
                     case "--evolution-level-scale":
                         if (i + 1 < args.length) {
                             switch (args[i]) {
                                 case "--evolution" -> evolutionArguments.add(args[i + 1]);
                                 case "--remove-evolution" -> removeEvolutionArguments.add(args[i + 1]);
                                 case "--boost-floor" -> boostFloorArgument = args[i + 1];
+                                case "--boost-percent" -> boostPercentArgument = args[i + 1];
                                 default -> evolutionScaleArgument = args[i + 1];
                             }
                         } else {
@@ -431,6 +442,20 @@ public class CliRandomizer {
                         break;
                     case "--keep-basic-shop-items":
                         keepBasicShopItems = true;
+                        break;
+                    // Added (13/10/2026): trainer battle item rules and incremental trainer movesets.
+                    case "--trainer-items":
+                        if (i + 1 < args.length) {
+                            trainerItemsArgument = args[i + 1];
+                        } else {
+                            printWarning("--trainer-items needs tiered or unchanged; ignored.");
+                        }
+                        break;
+                    case "--regular-trainers-keep-items":
+                        regularTrainerItems = true;
+                        break;
+                    case "--no-incremental-movesets":
+                        noIncrementalMovesets = true;
                         break;
                     case "--protect-shop-item":
                         if (i + 1 < args.length) {
@@ -485,6 +510,9 @@ public class CliRandomizer {
                         break;
                     // Added (12/10/2026): the mega finale start level, battle style rules and the independent
                     // "fully evolved by level".
+                    case "--stone-evolutions-level":
+                        stoneEvolutionsAlsoLevel = true;
+                        break;
                     case "--mega-from-level":
                     case "--battle-style-rule":
                     case "--fully-evolved-by-level":
@@ -715,12 +743,24 @@ public class CliRandomizer {
                 settings.getYaoSettings().addBattleStyleRule(group, style, chance);
             }
         }
+        if (stoneEvolutionsAlsoLevel) {
+            settings.getYaoSettings().setStoneEvolutionsAlsoLevel(true);
+        }
         if (fullyEvolvedArgument != null) {
             try {
                 settings.getYaoSettings().setFullyEvolvedByLevel(Integer.parseInt(fullyEvolvedArgument.strip()));
             } catch (NumberFormatException e) {
                 printWarning("--fully-evolved-by-level \"" + fullyEvolvedArgument + "\" is not a number; ignored.");
             }
+        }
+        if (trainerItemsArgument != null) {
+            settings.getYaoSettings().setTrainerItemMode(trainerItemsArgument);
+        }
+        if (regularTrainerItems) {
+            settings.getYaoSettings().setRegularTrainersKeepItems(true);
+        }
+        if (noIncrementalMovesets) {
+            settings.getYaoSettings().setIncrementalMovesets(false);
         }
         if (eggBasicOnly) {
             settings.getYaoSettings().setEggBoxBasicOnly(true);
@@ -765,7 +805,7 @@ public class CliRandomizer {
                 shopItemArguments,
                 htmlGuidePath,
                 protectShopItemArguments,
-                boostFloorArgument,
+                boostFloorArgument, boostPercentArgument,
                 evolutionArguments, removeEvolutionArguments, evolutionScaleArgument,
                 statEditArguments
         );
@@ -805,6 +845,9 @@ public class CliRandomizer {
                            "                   : Raise every fully evolved Pokemon below this base stat total up to it (for\n" +
                            "                     example 300), spread over its stats as they are. To raise or lower one chosen\n" +
                            "                     Pokemon's stats instead, use --stat-edit.");
+        System.out.println("--boost-percent <0-100>\n" +
+                           "                   : Needs --boost-floor. Instead of lifting the weak, fully evolved Pokemon (below the\n" +
+                           "                     floor) up to it, boost each by this percent of its own total.");
         System.out.println("--evolution <from>:<to>:<method>[:<number>]\n" +
                            "                   : Make <from> evolve into <to>, replacing how it evolves now or adding it. Methods:\n" +
                            "                     level, stone (item), trade, trade-item, happiness and the other FVX evolution\n" +
@@ -869,6 +912,18 @@ public class CliRandomizer {
                            "                     rotation battle, for example gymLeaders:double:10. Can be repeated (up to 8;\n" +
                            "                     the first matching rule that succeeds wins). Runs after the battle style\n" +
                            "                     setting. Gen 3 to 7 (triple and rotation: Gen 5 and 6 only).\n" +
+                           "--trainer-items <tiered|unchanged>\n" +
+                           "                   : tiered (default) limits the battle items trainers carry: ordinary trainers\n" +
+                           "                     none, gym leaders only the potion that fits the stage of the game, Full\n" +
+                           "                     Restore only for the Elite Four (from level 35) and other bosses (from 45).\n" +
+                           "                     Revives are removed. Gen 3 to 7. unchanged leaves the game's own items.\n" +
+                           "--regular-trainers-keep-items\n" +
+                           "                   : Ordinary trainers keep Potion, Super Potion and cheap cures.\n" +
+                           "--no-incremental-movesets\n" +
+                           "                   : Better movesets may pick the strongest moves at any level (old behaviour).\n" +
+                           "--stone-evolutions-level\n" +
+                           "                   : Pokemon with exactly one evolution, and that one by stone, can also evolve by\n" +
+                           "                     leveling (Gen 3 to 7). Pokemon with several evolutions are left alone.\n" +
                            "--fully-evolved-by-level <n>\n" +
                            "                   : Bring level evolutions down so every Pokemon is fully evolved by this level\n" +
                            "                     (15 to 100; 0 is off). Independent of Make Evolutions Easier.");

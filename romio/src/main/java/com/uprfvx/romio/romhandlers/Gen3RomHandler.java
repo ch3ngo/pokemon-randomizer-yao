@@ -1669,6 +1669,13 @@ public class Gen3RomHandler extends AbstractGBRomHandler {
             tr.setIndex(i);
             int tClassID = rom[trOffset + 1] & 0xFF;
             tr.setTrainerclass(trainerClasses.get(tClassID));
+            // Added for YAO (13/10/2026): the 4 battle item slots, 2 bytes each, just before the battle mode.
+            int[] battleItems = new int[4];
+            for (int slot = 0; slot < 4; slot++) {
+                int internal = readWord(trOffset + (entryLen - 24) + slot * 2);
+                battleItems[slot] = internal == 0 ? 0 : Gen3Constants.itemIDToStandard(internal);
+            }
+            tr.setBattleItems(battleItems);
 
             int pokeDataType = rom[trOffset] & 0xFF;
             if (rom[trOffset + (entryLen - 16)] == 0x01) {
@@ -1836,6 +1843,12 @@ public class Gen3RomHandler extends AbstractGBRomHandler {
                     (_) -> readTrainerPokemonDataLength(trOffset));
 
             writeByte(trOffset, (byte) tr.getPoketype());
+            if (tr.getBattleItems() != null) {
+                for (int slot = 0; slot < 4; slot++) {
+                    int id = tr.getBattleItems()[slot];
+                    writeWord(trOffset + (entryLen - 24) + slot * 2, id == 0 ? 0 : Gen3Constants.itemIDToInternal(id));
+                }
+            }
             writeFixedLengthString(tr.getName(), trOffset + 4, nameLen);
             writeByte(trOffset + (entryLen - 8), (byte) tr.getPokemon().size());
             if (tr.isForcedDoubleBattle()) {
@@ -4614,6 +4627,11 @@ public class Gen3RomHandler extends AbstractGBRomHandler {
     @Override
     public Set<Item> getAllConsumableHeldItems() {
         return itemIdsToSet(Gen3Constants.consumableHeldItems);
+    }
+
+    @Override
+    public boolean canChangeTrainerBattleItems() {
+        return true;
     }
 
     @Override

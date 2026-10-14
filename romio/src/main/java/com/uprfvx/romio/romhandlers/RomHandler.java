@@ -434,6 +434,9 @@ public interface RomHandler {
 
     boolean canAddPokemonToRegularTrainers();
 
+    /** Added for YAO (13/10/2026): whether {@link Trainer#getBattleItems()} is read and written for this game. */
+    boolean canChangeTrainerBattleItems();
+
     boolean canAddHeldItemsToBossTrainers();
 
     boolean canAddHeldItemsToImportantTrainers();

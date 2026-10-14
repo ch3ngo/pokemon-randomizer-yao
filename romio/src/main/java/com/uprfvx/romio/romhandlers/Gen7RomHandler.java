@@ -1609,6 +1609,12 @@ public class Gen7RomHandler extends Abstract3DSRomHandler {
                 byte[] trpoke = trpokes.getFile(i);
                 Trainer tr = new Trainer();
                 tr.setIndex(i);
+                // Added for YAO (13/10/2026): the 4 battle item slots.
+                int[] battleItems = new int[4];
+                for (int slot = 0; slot < 4; slot++) {
+                    battleItems[slot] = readWord(trainer, 4 + slot * 2);
+                }
+                tr.setBattleItems(battleItems);
                 tr.setTrainerclass(trainerClasses.get(trainer[0] & 0xFF));
                 int battleType = trainer[2] & 0xFF;
                 switch (battleType) {
@@ -1732,6 +1738,12 @@ public class Gen7RomHandler extends Abstract3DSRomHandler {
                 Trainer tr = allTrainers.next();
                 int offset = 0;
                 trainer[13] = (byte) tr.getPoketype();
+                // Added for YAO (13/10/2026): write the 4 battle item slots back.
+                if (tr.getBattleItems() != null) {
+                    for (int slot = 0; slot < 4; slot++) {
+                        writeWord(trainer, 4 + slot * 2, tr.getBattleItems()[slot]);
+                    }
+                }
                 int numPokes = tr.getPokemon().size();
                 trainer[offset+3] = (byte) numPokes;
 
@@ -3626,6 +3638,11 @@ public class Gen7RomHandler extends Abstract3DSRomHandler {
 
     @Override
     public boolean hasRivalFinalBattle() {
+        return true;
+    }
+
+    @Override
+    public boolean canChangeTrainerBattleItems() {
         return true;
     }
 

@@ -229,10 +229,14 @@ label.field { display: block; font-size: 12.5px; color: var(--muted); margin-bot
 .seg button { border: none; background: transparent; padding: 7px 14px; border-radius: 9px; color: var(--muted); font-weight: 600; font-size: 13.5px; transition: all .18s; }
 .seg button:hover { color: var(--text); background: rgba(124, 146, 255, 0.1); }
 .seg button.on { color: #1a0603; background: linear-gradient(120deg, var(--accent), #ff8a66); box-shadow: var(--glow); }
-.range { display: flex; align-items: center; gap: 12px; width: 100%; }
-.range output { min-width: 56px; text-align: right; font-family: var(--mono); color: var(--accent); font-size: 13.5px; }
+.range { display: flex; align-items: center; gap: 12px; width: 100%; min-width: 0; }
+.range output { min-width: 56px; text-align: right; font-family: var(--mono); color: var(--accent); font-size: 13.5px; flex: none; }
 /* Added 11/10/2026 (web UI feedback item 7): the optional exact-value number field next to a slider. */
 .range input[type=number] { width: 76px; flex: none; text-align: right; font-family: var(--mono); padding: 7px 10px; }
+/* Fixed (14/10/2026): inside a flex .range, input[type=range] with width:100% has flex-basis=100% which
+   overflows when a number field or output also occupies space in the same row. Setting flex:1 min-width:0
+   lets the slider grow to fill remaining space without pushing the number field off-screen. */
+.range input[type=range] { flex: 1; min-width: 0; width: auto; }
 /* Fixed (12/10/2026, web UI feedback round 3): the slider's own box used to be only 6px tall with an 18px thumb
    hanging out of it, so a click on the thumb mostly landed outside the element and never grabbed it. The input
    is now a 26px tall hit area with a transparent background; the visible 6px track is drawn by the track
@@ -411,3 +415,12 @@ mark { background: rgba(255, 201, 74, 0.35); color: inherit; border-radius: 3px;
 .tier-cell { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 12px; border-radius: 10px; background: rgba(124, 146, 255, 0.06); }
 .subblock .now { font-size: 13px; color: var(--faint); }
 .subblock .now.on { color: var(--accent); }
+
+/* Added (13/10/2026, web UI feedback item 50): the wild Pokemon mode picker. */
+.mode-card { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; text-align: left; width: 100%; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line, rgba(124,146,255,.25)); background: transparent; color: inherit; cursor: pointer; font: inherit; }
+.mode-card:hover { border-color: var(--cyan, #38e1ff); }
+.mode-card.on { border-color: var(--cyan, #38e1ff); background: rgba(56,225,255,.08); box-shadow: 0 0 0 1px var(--cyan, #38e1ff) inset; }
+.mode-card .mode-title { font-weight: 700; }
+.mode-card .mode-short { font-size: 13.5px; opacity: .85; }
+.mode-card .mode-long { font-size: 13px; opacity: .8; margin-top: 4px; white-space: normal; }
+.mode-card .mode-example { font-size: 13px; color: var(--cyan, #38e1ff); margin-top: 2px; }

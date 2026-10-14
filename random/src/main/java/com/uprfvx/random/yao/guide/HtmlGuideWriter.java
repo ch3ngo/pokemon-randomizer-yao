@@ -96,8 +96,10 @@ public final class HtmlGuideWriter {
         meta.put("romLang", romLang);
         // Added 12/10/2026: no game handler exposes where a static, gift or traded Pokemon is found, so the page says so
         Map<String, Object> locationInfo = new LinkedHashMap<>();
-        locationInfo.put("statics", false);
-        locationInfo.put("trades", false);
+        // Modified 13/10/2026: true when the table of places has a section for this game (see GuideLocations)
+        boolean located = GuideLocations.get().covers(original);
+        locationInfo.put("statics", located);
+        locationInfo.put("trades", located);
         meta.put("locationInfo", locationInfo);
         meta.put("version", com.uprfvx.random.Version.LATEST.name);
         // dates are always written DD/MM/YYYY
@@ -119,6 +121,9 @@ public final class HtmlGuideWriter {
         Map<String, Object> randomizedData = GuideDataCollector.collect(randomized, useTimeOfDay,
                 new GuideNames.Resolver(randomized));
         Map<String, Object> originalData = GuideDataCollector.collect(original, useTimeOfDay, new GuideNames.Resolver(original));
+        // places of the static, gift and traded Pokemon (13/10/2026), written to both from the original game
+        GuideDataCollector.applyLocations(originalData, original);
+        GuideDataCollector.applyLocations(randomizedData, original);
         // game order numbers are worked out from the original game and written to both
         GuideOrder.apply(originalData, randomizedData, randomized);
         root.put("placeNames", placeNames(originalData, randomizedData));

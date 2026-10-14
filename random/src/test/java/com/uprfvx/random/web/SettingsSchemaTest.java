@@ -60,6 +60,18 @@ public class SettingsSchemaTest {
                 assertNotNull(f.get("label"), "no label for " + f.get("key"));
                 assertFalse(((String) f.get("label")).isBlank(), "blank label for " + f.get("key"));
             }
+            // Added (13/10/2026, web UI feedback item 9): the field itself having a label was already checked
+            // above, but nothing checked each individual CHOICE of an enum field, which is how
+            // "wildPokemonZoneMod"'s last two options ("1 Per Named Location", "1 In Whole Game", the latter also
+            // being the default) ended up rendered as blank, unreadable entries in the web interface's dropdown,
+            // with no way to tell what was actually selected.
+            if (type.equals("enum")) {
+                for (Object o : (List<?>) f.get("options")) {
+                    Map<?, ?> opt = (Map<?, ?>) o;
+                    assertNotNull(opt.get("label"), "null option label for " + f.get("key"));
+                    assertFalse(((String) opt.get("label")).isBlank(), "blank option label for " + f.get("key"));
+                }
+            }
         }
     }
 
@@ -141,5 +153,83 @@ public class SettingsSchemaTest {
         assertTrue(((List<?>) schema.extract(none).get("miscTweaks")).isEmpty());
         Settings all = schema.build(Map.of("miscTweaks", List.of("fastestText", "bogus")), -1, "G");
         assertEquals(List.of("fastestText"), schema.extract(all).get("miscTweaks"));
+    }
+
+    // Added (13/10/2026, web UI feedback): the type of the starters can be "None" (the program picks the type), it
+    // starts as None, and is only enabled while the type rule is "Single type".
+    @Test
+    public void startersTypeCanBeNoneAndOnlyAppliesToSingleTypeRule() {
+        Map<String, Object> field = null;
+        for (Map<String, Object> f : allFields(schema.describe(null))) {
+            if ("startersSingleType".equals(f.get("key"))) {
+                field = f;
+            }
+        }
+        assertNotNull(field);
+        assertEquals("", field.get("default"));
+        assertEquals("", ((Map<?, ?>) ((List<?>) field.get("options")).get(0)).get("value"));
+        assertEquals("startersTypeMod", field.get("dependsOn"));
+        assertEquals("SINGLE_TYPE", field.get("dependsOnValue"));
+
+        Settings none = schema.build(Map.of("startersSingleType", ""), -1, "G");
+        assertNull(none.getStartersSingleType());
+        assertEquals("", schema.extract(none).get("startersSingleType"));
+        Settings fire = schema.build(Map.of("startersSingleType", "FIRE"), -1, "G");
+        assertEquals("FIRE", schema.extract(fire).get("startersSingleType"));
+    }
+
+    // Added (13/10/2026, web UI feedback item 50): the wild Pokemon picker in app.js maps its plain-language modes onto
+    // randomizeWildPokemon and wildPokemonZoneMod. These tests keep the page and the settings from drifting apart.
+    @Test
+    @SuppressWarnings("unchecked")
+    public void wildPickerKeysAndModesExistInTheSchemaAndInThePage() throws Exception {
+        Map<String, Object> described = schema.describe(null);
+        Map<String, Object> wild = null;
+        for (Object s : (List<Object>) described.get("sections")) {
+            for (Object g : (List<Object>) ((Map<String, Object>) s).get("groups")) {
+                if ("wild".equals(((Map<String, Object>) g).get("id"))) {
+                    wild = (Map<String, Object>) g;
+                }
+            }
+        }
+        assertNotNull(wild);
+        List<String> keys = new ArrayList<>();
+        for (Object f : (List<Object>) wild.get("fields")) {
+            keys.add((String) ((Map<String, Object>) f).get("key"));
+        }
+        String page;
+        try (java.io.InputStream in = SettingsSchemaTest.class.getResourceAsStream("/com/uprfvx/random/web/app.js")) {
+            page = new String(in.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+        }
+        for (String key : List.of("wildPokemonZoneMod", "splitWildZoneByEncounterTypes", "useTimeBasedEncounters",
+                "similarStrengthEncounters", "wildPokemonTypeMod", "keepWildTypeThemes", "wildPokemonEvolutionMod",
+                "keepWildEvolutionFamilies", "blockWildLegendaries", "allowWildAltFormes", "catchEmAllEncounters",
+                "balanceShakingGrass", "useMinimumCatchRate", "minimumCatchRateLevel", "randomizeWildPokemonHeldItems",
+                "banBadRandomWildPokemonHeldItems", "wildLevelsModified", "wildLevelModifier")) {
+            assertTrue(keys.contains(key), "the wild group lost " + key);
+            assertTrue(page.contains("'" + key + "'"), "the wild picker no longer places " + key);
+        }
+        Map<String, Object> zone = null;
+        for (Object f : (List<Object>) wild.get("fields")) {
+            if ("wildPokemonZoneMod".equals(((Map<String, Object>) f).get("key"))) {
+                zone = (Map<String, Object>) f;
+            }
+        }
+        assertNotNull(zone);
+        for (Object o : (List<Object>) zone.get("options")) {
+            String value = (String) ((Map<String, Object>) o).get("value");
+            assertTrue(page.contains("id: '" + value + "'"), "no picker card for the area mode " + value);
+        }
+    }
+
+    @Test
+    public void everyWildAreaModeSurvivesSaveAndLoad() {
+        for (Settings.WildPokemonZoneMod mod : Settings.WildPokemonZoneMod.values()) {
+            Map<String, Object> values = new LinkedHashMap<>();
+            values.put("randomizeWildPokemon", true);
+            values.put("wildPokemonZoneMod", mod.name());
+            Settings settings = schema.build(values, -1, "G");
+            assertEquals(mod.name(), schema.extract(Settings.fromString(settings.toString())).get("wildPokemonZoneMod"));
+        }
     }
 }

@@ -337,4 +337,85 @@ public class EvolutionEditorTest {
         assertFalse(EvolutionEditor.overlaps(EvolutionType.TRADE, 0, EvolutionType.TRADE_ITEM, 0));
         assertFalse(EvolutionEditor.overlaps(EvolutionType.LEVEL, 20, EvolutionType.STONE, 20));
     }
+
+    // ---- Phase 19 (13/10/2026): stone evolutions also by level ----
+
+    private static FakeWorld stoneWorld(int gen) {
+        FakeWorld w = eeveeWorld(gen);
+        w.add(37, "VULPIX");
+        w.add(38, "NINETALES");
+        w.add(44, "GLOOM");
+        w.add(45, "VILEPLUME");
+        w.add(182, "BELLOSSOM");
+        w.add(43, "ODDISH");
+        w.evolve(37, 38, EvolutionType.STONE, FIRE_STONE);
+        w.evolve(43, 44, EvolutionType.LEVEL, 21);
+        w.evolve(44, 45, EvolutionType.STONE, 85);
+        w.evolve(44, 182, EvolutionType.STONE, 86);
+        return w;
+    }
+
+    @Test
+    public void singleStoneEvolutionGainsALevelEvolutionAndKeepsTheStone() {
+        FakeWorld w = stoneWorld(4);
+        List<String> notes = new EvolutionEditor(w, new YaoSettings()).addLevelRoutesToStoneEvolutions(0);
+        assertEquals(2, w.species.get(37).getEvolutionsFrom().size());
+        assertEquals(EvolutionType.STONE, w.species.get(37).getEvolutionsFrom().get(0).getType());
+        Evolution added = w.species.get(37).getEvolutionsFrom().get(1);
+        assertEquals(EvolutionType.LEVEL, added.getType());
+        assertEquals(38, added.getTo().getNumber());
+        assertEquals(25, added.getExtraInfo()); // 400 / 16 with no stats in the fake game
+        assertTrue(all(notes).contains("1 Pokemon"));
+    }
+
+    @Test
+    public void pokemonWithSeveralEvolutionsAreNeverTouched() {
+        FakeWorld w = stoneWorld(4);
+        new EvolutionEditor(w, new YaoSettings()).addLevelRoutesToStoneEvolutions(0);
+        assertEquals(5, w.species.get(133).getEvolutionsFrom().size());
+        assertEquals(2, w.species.get(44).getEvolutionsFrom().size());
+    }
+
+    @Test
+    public void theLevelIsLimitedByTheFullyEvolvedLevelAndStaysAboveThePreviousStage() {
+        FakeWorld w = stoneWorld(4);
+        w.add(36, "ROCKET");
+        w.evolve(36, 37, EvolutionType.LEVEL, 30);
+        new EvolutionEditor(w, new YaoSettings()).addLevelRoutesToStoneEvolutions(20);
+        Evolution added = w.species.get(37).getEvolutionsFrom().get(1);
+        assertEquals(31, added.getExtraInfo()); // capped to 20, then kept above the previous stage's 30
+        FakeWorld w2 = stoneWorld(4);
+        new EvolutionEditor(w2, new YaoSettings()).addLevelRoutesToStoneEvolutions(20);
+        assertEquals(20, w2.species.get(37).getEvolutionsFrom().get(1).getExtraInfo());
+    }
+
+    @Test
+    public void speciesTheUserEditedAreLeftAlone() {
+        FakeWorld w = stoneWorld(4);
+        YaoSettings yao = new YaoSettings();
+        yao.addEvolutionEdit(37, 38, EvolutionType.STONE, MOON_STONE);
+        EvolutionEditor editor = new EvolutionEditor(w, yao);
+        editor.applyStructural();
+        List<String> notes = editor.addLevelRoutesToStoneEvolutions(0);
+        assertEquals(1, w.species.get(37).getEvolutionsFrom().size());
+        assertTrue(all(notes).contains("edited by you"));
+    }
+
+    @Test
+    public void gen1And2AddNothing() {
+        FakeWorld w = stoneWorld(2);
+        List<String> notes = new EvolutionEditor(w, new YaoSettings()).addLevelRoutesToStoneEvolutions(0);
+        assertEquals(1, w.species.get(37).getEvolutionsFrom().size());
+        assertTrue(all(notes).contains("cannot store"));
+    }
+
+    @Test
+    public void settingRoundTripsThroughTheTextAndStringFormats() {
+        YaoSettings yao = new YaoSettings();
+        assertTrue(yao.isDefault());
+        yao.setStoneEvolutionsAlsoLevel(true);
+        assertFalse(yao.isDefault());
+        assertTrue(YaoSettings.fromBase64(yao.toBase64()).isStoneEvolutionsAlsoLevel());
+        assertTrue(yao.copy().isStoneEvolutionsAlsoLevel());
+    }
 }

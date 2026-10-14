@@ -1245,8 +1245,10 @@ public class RandomizationLogger {
 
     private void logStaticPokemon(List<StaticEncounter> oldStatics) {
         printSectionTitle("stp");
-        // Added for YAO (12/10/2026): no game handler exposes where these events happen
-        log.println("Where each of these Pokemon is given or met is not stored in the game data, so no location is listed.");
+        // Modified for YAO (13/10/2026): places come from a table kept by this program (the game data has none)
+        List<com.uprfvx.random.yao.guide.GuideLocations.Found> places = staticPlaces(oldStatics);
+        log.println("Where each Pokemon is given or met comes from a table kept by this program (the game data does not store it).");
+        log.println("A place in brackets describes the original event, whatever Pokemon is there now.");
         log.println();
 
         List<StaticEncounter> newStatics = romHandler.getStaticPokemon();
@@ -1263,9 +1265,19 @@ public class RandomizationLogger {
             } else {
                 seenPokemon.put(oldStaticString, 1);
             }
-            log.println(" => " + newP.toString(settings.isStaticLevelModified()));
+            log.print(" => " + newP.toString(settings.isStaticLevelModified()));
+            log.println(places != null && i < places.size() ? "  [" + places.get(i).en + "]" : "");
         }
         printSectionSeparator();
+    }
+
+    /** Added for YAO (13/10/2026): the places of the original static Pokemon, or null when they cannot be worked out. */
+    private List<com.uprfvx.random.yao.guide.GuideLocations.Found> staticPlaces(List<StaticEncounter> oldStatics) {
+        try {
+            return com.uprfvx.random.yao.guide.GuideLocations.get().forStatics(romHandler.getROMName(), oldStatics);
+        } catch (RuntimeException e) {
+            return null;
+        }
     }
 
     private boolean shouldLogTotemPokemon() {
@@ -1332,15 +1344,21 @@ public class RandomizationLogger {
 
     private void logInGameTrades(List<InGameTrade> oldTrades) {
         printSectionTitle("igt");
-        // Added for YAO (12/10/2026): no game handler exposes where each trade happens
-        log.println("Where each trade happens is not stored in the game data, so no location is listed.");
+        // Modified for YAO (13/10/2026): places come from a table kept by this program (the game data has none)
+        log.println("Where each trade happens comes from a table kept by this program (the game data does not store it).");
         log.println();
         List<InGameTrade> newTrades = romHandler.getInGameTrades();
+        List<com.uprfvx.random.yao.guide.GuideLocations.Found> places;
+        try {
+            places = com.uprfvx.random.yao.guide.GuideLocations.get().forTrades(romHandler.getROMName(), oldTrades);
+        } catch (RuntimeException e) {
+            places = null;
+        }
 
-        TextTable table = new TextTable(6);
+        TextTable table = new TextTable(7);
         table.addRow(
                 getBS("Log.igt.oldRequested"), getBS("Log.igt.oldGiven"), getBS("Log.igt.oldNickname"),
-                getBS("Log.igt.newRequested"), getBS("Log.igt.newGiven"), getBS("Log.igt.newNickname")
+                getBS("Log.igt.newRequested"), getBS("Log.igt.newGiven"), getBS("Log.igt.newNickname"), "Location"
         );
         for (int i = 0; i < oldTrades.size(); i++) {
             InGameTrade oldT = oldTrades.get(i);
@@ -1349,7 +1367,8 @@ public class RandomizationLogger {
                     oldT.getRequestedSpecies() == null ? getBS("Log.igt.any") : oldT.getRequestedSpecies().getFullName(),
                     oldT.getGivenSpecies().getFullName(), oldT.getNickname(),
                     newT.getRequestedSpecies() == null ? getBS("Log.igt.any") : newT.getRequestedSpecies().getFullName(),
-                    newT.getGivenSpecies().getFullName(), newT.getNickname()
+                    newT.getGivenSpecies().getFullName(), newT.getNickname(),
+                    places != null && i < places.size() ? places.get(i).en : ""
             );
         }
         log.print(table);

@@ -4,6 +4,10 @@
       "en": "Pokemon Randomizer YAO guide",
       "es": "Guía de Pokémon Randomizer YAO"
     },
+    "origShort": {
+      "en": "Original:",
+      "es": "Antes:"
+    },
     "showOrig": {
       "en": "Show original values",
       "es": "Mostrar valores originales"
@@ -129,8 +133,8 @@
       "es": "No se han podido leer algunas secciones"
     },
     "changedLegend": {
-      "en": "Highlighted cells changed from the original game; the small crossed-out text is the original value. Hover a cell to see it too.",
-      "es": "Las celdas resaltadas han cambiado respecto al juego original; el texto pequeño tachado es el valor original. Pasa el ratón sobre una celda para verlo también."
+      "en": "Highlighted cells changed from the original game; the small crossed-out text is the other value (hover a cell to see it too). Turn on \"Show original values\" above to flip which one is shown first: the original becomes the main text (in a neutral color) and the new, randomized value becomes the small crossed-out one.",
+      "es": "Las celdas resaltadas han cambiado respecto al juego original; el texto pequeño tachado es el otro valor (pasa el ratón sobre una celda para verlo también). Activa \"Mostrar valores originales\" arriba para invertir cuál se muestra primero: el original pasa a ser el texto principal (en un color neutro) y el nuevo valor aleatorizado pasa a ser el pequeño tachado."
     },
     "evo": {
       "en": "Evolutions",
@@ -801,12 +805,12 @@
       "es": "Lugar"
     },
     "staticNote": {
-      "en": "No game stores where these Pokemon are given or met, so their location is not shown. They are ordered by their level in the original game, which follows the story closely but not exactly. The Pokemon column shows what is there now, with the original crossed out.",
-      "es": "Ningún juego guarda dónde se reciben o se encuentran estos Pokémon, así que no se muestra su lugar. Están ordenados por su nivel en el juego original, que sigue la historia de cerca pero no con exactitud. La columna de Pokémon muestra lo que hay ahora, con el original tachado."
+      "en": "Where each Pokemon is given or met comes from a table kept by this program, because the games do not store it; an entry in grey is a general description where the place is not in the table. The place always describes the original event, whatever Pokemon is there now. They are ordered by their level in the original game, which follows the story closely but not exactly. The Pokemon column shows what is there now, with the original crossed out.",
+      "es": "El lugar donde se recibe o se encuentra cada Pokémon sale de una tabla que mantiene este programa, porque los juegos no lo guardan; una entrada en gris es una descripción general cuando el lugar no está en la tabla. El lugar siempre describe el evento original, sea cual sea el Pokémon que haya ahora. Están ordenados por su nivel en el juego original, que sigue la historia de cerca pero no con exactitud. La columna de Pokémon muestra lo que hay ahora, con el original tachado."
     },
     "tradeNote": {
-      "en": "No game stores where each trade happens, so the location is not shown, and the trades are listed in the order the game stores them. \"You give\" is what the other trainer asks for; \"You receive\" is what you get.",
-      "es": "Ningún juego guarda dónde ocurre cada intercambio, así que no se muestra el lugar, y los intercambios aparecen en el orden en que el juego los guarda. \"Entregas\" es lo que pide el otro entrenador; \"Recibes\" es lo que obtienes."
+      "en": "Where each trade happens comes from a table kept by this program, because the games do not store it; an entry in grey is a general description where the place is not in the table. The trades are listed in the order the game stores them. \"You give\" is what the other trainer asks for; \"You receive\" is what you get.",
+      "es": "El lugar donde ocurre cada intercambio sale de una tabla que mantiene este programa, porque los juegos no lo guardan; una entrada en gris es una descripción general cuando el lugar no está en la tabla. Los intercambios aparecen en el orden en que el juego los guarda. \"Entregas\" es lo que pide el otro entrenador; \"Recibes\" es lo que obtienes."
     },
     "tradeWho": {
       "en": "Original trainer",
