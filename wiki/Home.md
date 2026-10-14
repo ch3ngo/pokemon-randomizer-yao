@@ -2,7 +2,7 @@
 
 Pokemon Randomizer YAO ("Yet Another One") randomizes the mainline Pokemon games from Generation 1 to Generation 7, including the 3DS games up to Ultra Sun and Ultra Moon. It is built on top of the Universal Pokemon Randomizer FVX and keeps all of its options, then adds a few things that no other randomizer does.
 
-**Status: alpha.** Everything described in these pages has been built and checked on the games listed, but it has not been played through. Please report what breaks.
+Everything described in these pages has been built and checked on the games listed, but it has not been played through. Please report what breaks.
 
 ## Start here
 

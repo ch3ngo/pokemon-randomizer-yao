@@ -31,6 +31,7 @@ import com.uprfvx.random.updaters.SpeciesBaseStatUpdater;
 import com.uprfvx.random.updaters.TypeEffectivenessUpdater;
 import com.uprfvx.random.updaters.Updater;
 import com.uprfvx.romio.MiscTweak;
+import com.uprfvx.romio.gamedata.MoveLearnt;
 import com.uprfvx.romio.graphics.packs.CustomPlayerGraphics;
 import com.uprfvx.romio.romhandlers.Gen1RomHandler;
 import com.uprfvx.romio.romhandlers.RomHandler;
@@ -38,6 +39,10 @@ import com.uprfvx.romio.romhandlers.RomHandler;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.ResourceBundle;
 
 /**
@@ -728,8 +733,33 @@ public class GameRandomizer {
         // 2. Reorder moves by damage
         // Note: "Metronome only" is handled after trainers instead
 
-        if (settings.getMovesetsMod() != Settings.MovesetsMod.UNCHANGED &&
-                settings.getMovesetsMod() != Settings.MovesetsMod.METRONOME_ONLY) {
+        boolean randomizeLearnsets = settings.getMovesetsMod() != Settings.MovesetsMod.UNCHANGED &&
+                settings.getMovesetsMod() != Settings.MovesetsMod.METRONOME_ONLY;
+
+        // Added for YAO (14/10/2026): with better trainer movesets on, the trainers get their own, separately
+        // randomized learnsets (their pool is then narrowed by the trainer moveset rules), while the Pokemon the
+        // player gets keep one randomized set. The trainer set is made first from the original data, then the
+        // player's set is made and written to the ROM.
+        boolean separateTrainerLearnsets = randomizeLearnsets
+                && (settings.isBetterBossTrainerMovesets() || settings.isBetterImportantTrainerMovesets()
+                || settings.isBetterRegularTrainerMovesets());
+        if (separateTrainerLearnsets) {
+            Map<Integer, List<MoveLearnt>> originalLearnt = copyLearnsets(romHandler.getMovesLearnt());
+            Map<Integer, List<Integer>> originalEggs = copyEggMoves(romHandler.getEggMoves());
+
+            speciesMovesetRandomizer.randomizeMovesLearnt();
+            speciesMovesetRandomizer.randomizeEggMoves();
+            if (settings.isReorderDamagingMoves()) {
+                speciesMovesetRandomizer.orderDamagingMovesByDamage();
+            }
+            trainerMovesetRandomizer.setLearnsets(copyLearnsets(romHandler.getMovesLearnt()),
+                    copyEggMoves(romHandler.getEggMoves()));
+
+            romHandler.setMovesLearnt(originalLearnt);
+            romHandler.setEggMoves(originalEggs);
+        }
+
+        if (randomizeLearnsets) {
             speciesMovesetRandomizer.randomizeMovesLearnt();
             speciesMovesetRandomizer.randomizeEggMoves();
         }
@@ -737,6 +767,29 @@ public class GameRandomizer {
         if (settings.isReorderDamagingMoves()) {
             speciesMovesetRandomizer.orderDamagingMovesByDamage();
         }
+    }
+
+    private static Map<Integer, List<MoveLearnt>> copyLearnsets(Map<Integer, List<MoveLearnt>> source) {
+        Map<Integer, List<MoveLearnt>> copy = new HashMap<>();
+        for (Map.Entry<Integer, List<MoveLearnt>> e : source.entrySet()) {
+            List<MoveLearnt> list = new ArrayList<>();
+            for (MoveLearnt ml : e.getValue()) {
+                list.add(new MoveLearnt(ml));
+            }
+            copy.put(e.getKey(), list);
+        }
+        return copy;
+    }
+
+    private static Map<Integer, List<Integer>> copyEggMoves(Map<Integer, List<Integer>> source) {
+        if (source == null) {
+            return null;
+        }
+        Map<Integer, List<Integer>> copy = new HashMap<>();
+        for (Map.Entry<Integer, List<Integer>> e : source.entrySet()) {
+            copy.put(e.getKey(), new ArrayList<>(e.getValue()));
+        }
+        return copy;
     }
 
     private void maybeRandomizeTMMoves() {

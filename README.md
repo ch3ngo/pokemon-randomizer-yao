@@ -6,7 +6,7 @@
 
 <p align="center"><em>Yet Another One. A Pokemon ROM randomizer for Gen 1 to Gen 7 with a modern web interface, built on Universal Pokemon Randomizer FVX.</em></p>
 
-> **A friendly note.** This is a personal side project and a work in progress (alpha). Everything below has been run against the games listed in the tested table, but none of it has been played through from start to finish, so expect rough edges. If you find a bug or have an idea, please [open an issue](https://github.com/ch3ngo/pokemon-randomizer-yao/issues). No report is too small.
+> **A friendly note.** This is a personal side project and a work in progress. Everything below has been run against the games listed in the tested table, but none of it has been played through from start to finish, so expect rough edges. If you find a bug or have an idea, please [open an issue](https://github.com/ch3ngo/pokemon-randomizer-yao/issues). No report is too small.
 
 ## Download and run
 
@@ -70,7 +70,7 @@ Everything FVX does is included (randomization of all of the above, HM usability
 | Mega finale | The last Pokemon of chosen trainers holds a mega stone. Only for games with Mega Evolutions. |
 | Battle style chances | A chosen share of a trainer group fights as double, triple or rotation battles, where the game allows it. |
 | Trainer battle items | The Potions and Full Restores trainers use are limited by tier and stage of the game (ordinary trainers none, gym leaders only the potion that fits, Full Restore only for the Elite Four and bosses at high levels). Gen 3 to 7. |
-| Incremental movesets | "Better movesets" follows a power curve by level and trainer tier: trainers use good moves from the first gym (around 50 to 60 power), Elite Four trainers mostly 65 to 95 power moves with a rare 120 or 150. Physical and special attackers get fitting moves, status moves are allowed everywhere but rare, and a set always has at least two attacking moves. Trainers only, never wild, static, gift or trade Pokemon. |
+| Incremental movesets | "Better movesets" follows a power curve by level and trainer tier: moves come from what the Pokemon can learn and favour a power that fits the stage: around 50 to 60 at the first gyms, Elite Four trainers mostly 65 to 95 power moves with a rare 120 or 150. Physical and special attackers get fitting moves, status moves are allowed everywhere but rare, and a set always has at least two attacking moves. Trainers only, never wild, static, gift or trade Pokemon. If the Pokemon movesets are randomized too, trainers get their own, separately randomized learnsets, different from the ones your Pokemon get. |
 | Locke and Soft-locke (**experimental**) | Revive items removed and Pokemon Centers that stop reviving. Pokemon Center part on HeartGold, SoulSilver, Black 2 and White 2 only. |
 | Softlock check | Warns if no Pokemon you can get can learn a field move the game needs early on. |
 | Modified ROM warning | Tells you if a ROM is not an unmodified retail dump (Gen 1 to 5). |

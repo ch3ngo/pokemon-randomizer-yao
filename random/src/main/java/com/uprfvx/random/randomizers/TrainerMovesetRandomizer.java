@@ -26,6 +26,15 @@ public class TrainerMovesetRandomizer extends Randomizer {
         this.hasAbilities = romHandler.abilitiesPerSpecies() != 0;
     }
 
+    /**
+     * Added for YAO (14/10/2026): the level-up and egg moves the trainer pool is built from, randomized separately
+     * from the ones in the ROM (which are the player's Pokemon's).
+     */
+    public void setLearnsets(Map<Integer, List<MoveLearnt>> levelUpMoves, Map<Integer, List<Integer>> eggMoves) {
+        allLevelUpMoves = levelUpMoves;
+        allEggMoves = eggMoves != null ? eggMoves : new HashMap<>();
+    }
+
     public void randomizeTrainerMovesets() {
         boolean isCyclicEvolutions = settings.getEvolutionsMod() == Settings.EvolutionsMod.RANDOM_EVERY_LEVEL;
         boolean isOnlyMultiBattles = settings.getBattleStyle().isOnlyMultiBattles();
@@ -34,6 +43,7 @@ public class TrainerMovesetRandomizer extends Randomizer {
         boolean betterRegularMovesets = settings.isBetterRegularTrainerMovesets();
 
         boolean incremental = settings.getYaoSettings().isIncrementalMovesets();
+        incrementalPool = incremental;
         List<Trainer> trainers = romHandler.getTrainers().stream()
                 .filter(t -> (t.isBoss() && betterBossMovesets) ||
                         (t.isImportant() && betterImportantMovesets) ||
@@ -604,6 +614,19 @@ public class TrainerMovesetRandomizer extends Randomizer {
         return obsoletedMoves.stream().distinct().collect(Collectors.toList());
     }
 
+    private boolean incrementalPool;
+
+    /**
+     * Highest power a TM or tutor move may have to enter the pool. Upstream used level * 3, which keeps every move
+     * of 60 or more power out of the pool until level 20 and so makes the early game weak. Modified for YAO
+     * (14/10/2026): with incremental movesets the gate follows the power curve instead, and the weights keep the
+     * strong ones rare.
+     */
+    private double tmPowerGate(int level) {
+        double upstream = level * 3;
+        return incrementalPool ? Math.max(upstream, TrainerMoveProgression.centerPower(level, null) * 1.4) : upstream;
+    }
+
     private List<Move> getMoveSelectionPoolAtLevel(TrainerPokemon tp, boolean cyclicEvolutions) {
 
         List<Move> moves = romHandler.getMoves();
@@ -671,7 +694,7 @@ public class TrainerMovesetRandomizer extends Randomizer {
         for (int tmMove: allTMMoves) {
             if (tmCompat[allTMMoves.indexOf(tmMove) + 1]) {
                 Move thisMove = moves.get(tmMove);
-                if (thisMove.power > 1 && tp.getLevel() * 3 > thisMove.power * thisMove.hitCount &&
+                if (thisMove.power > 1 && tmPowerGate(tp.getLevel()) > thisMove.power * thisMove.hitCount &&
                         this.random.nextDouble() < tmMoveProbability) {
                     moveSelectionPoolAtLevel.add(thisMove);
                 } else if ((thisMove.power <= 1 && this.random.nextInt(100) < tp.getLevel()) ||
@@ -687,7 +710,7 @@ public class TrainerMovesetRandomizer extends Randomizer {
             for (int tutorMove: allTutorMoves) {
                 if (tutorCompat[allTutorMoves.indexOf(tutorMove) + 1]) {
                     Move thisMove = moves.get(tutorMove);
-                    if (thisMove.power > 1 && tp.getLevel() * 3 > thisMove.power * thisMove.hitCount &&
+                    if (thisMove.power > 1 && tmPowerGate(tp.getLevel()) > thisMove.power * thisMove.hitCount &&
                             this.random.nextDouble() < tutorMoveProbability) {
                         moveSelectionPoolAtLevel.add(thisMove);
                     } else if ((thisMove.power <= 1 && this.random.nextInt(100) < tp.getLevel()) ||
