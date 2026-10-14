@@ -101,6 +101,9 @@ public class SpeciesAbilityRandomizer extends Randomizer {
 
         CopyUpEvolutionsHelper.Options cuehOptions = new CopyUpEvolutionsHelper.Options
                 .Builder(basicAction, evolvedAction)
+                // modified from FVX (14/10/2026): non-cosmetic alt formes (Megas when "follow Mega Evolutions"
+                // is off, battle formes, etc.) used to keep their original abilities; they now get their own
+                .altFormeAction((_, altForme) -> basicAction.applyTo(altForme))
                 .cosmeticAction((baseForme, altForme) -> altForme.copyBaseFormeAbilities(baseForme))
                 .evolutionSanity(evolutionSanity)
                 .treatMegasAsEvos(megaEvolutionSanity)

@@ -165,6 +165,7 @@ td.changed.orig { background: rgba(143, 152, 194, 0.08); box-shadow: inset 2px 0
 .was { display: none; }
 .rowbtn { background: none; border: none; padding: 0; font-weight: 650; text-align: left; }
 .rowbtn:hover { color: var(--accent); }
+.evolink { font: inherit; text-decoration: underline dotted; cursor: pointer; color: inherit; }
 .tag { display: inline-block; white-space: nowrap; padding: 2px 10px; margin: 3px 6px 3px 0; border-radius: 999px; font-size: .78rem; border: 1px solid var(--line-hi); background: rgba(124, 146, 255, 0.07); }
 .tag.type { color: #0a0d18; font-weight: 700; border-color: transparent; text-shadow: 0 1px 0 rgba(255, 255, 255, 0.25); }
 .tag.changed { background: var(--changed); border-color: var(--changed-line); }
@@ -592,7 +593,7 @@ function renderPokemon() {
   return `<div class="view">${spoiler(html)}</div>`;
 }
 function pokemonDetail(r, o) {
-  const evoList = (x, orig) => (x.evos || []).map(e => `${esc(spName(e.to, orig))} <span class="pill-evo">${esc(evoText(e))}</span>`).join("; ");
+  const evoList = (x, orig) => (x.evos || []).map(e => `<button class="rowbtn evolink" type="button" data-gopk="${e.to}">${esc(spName(e.to, orig))}</button> <span class="pill-evo">${esc(evoText(e))}</span>`).join("; ");
   const evo = evoList(r, false) || esc(t("none")), evoWas = evoList(o, true);
   const learnList = (x, orig) => (x.learn || []).map(([lv, mv]) => `<span class="mv">${esc(t("level"))}${lv} ${esc(mvName(mv, orig))}</span>`).join(" ");
   const learn = learnList(r, false) || esc(t("none")), learnWas = learnList(o, true);
@@ -947,6 +948,7 @@ document.addEventListener("click", ev => {
   if (el.dataset.sort) { const [k, c] = el.dataset.sort.split(":"); const s = S.sort[k]; S.sort[k] = { col: c, dir: s && s.col === c ? -s.dir : 1 }; paint(); return; }
   if (el.dataset.more) { S.lim[el.dataset.more] = (S.lim[el.dataset.more] || 120) + 200; paint(); return; }
   if (el.id === "btnBosses") { S.filter.tnBoss = !S.filter.tnBoss; paint(); return; }
+  if (el.dataset.gopk) { const id = el.dataset.gopk; S.filter.pk = id; S.filter.pkType = ""; S.changedOnly = false; S.open["pk:" + id] = true; paint(); window.scrollTo({ top: 0 }); return; }
   if (el.dataset.open) { S.open[el.dataset.open] = !S.open[el.dataset.open]; paint(); return; }
   if (el.id === "btnSpoil") { document.body.classList.toggle("hide"); paint(); return; }
   if (el.id === "btnOrig") { S.showOrig = !S.showOrig; document.body.classList.toggle("showorig", S.showOrig); el.setAttribute("aria-pressed", String(S.showOrig)); return; }
